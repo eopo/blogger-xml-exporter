@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -124,7 +126,10 @@ func (c *Client) getJSON(ctx context.Context, endpoint string, out interface{}) 
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("blogger API returned status %d", resp.StatusCode)
+		// Include the (bounded) response body so container logs reveal the actual
+		// reason (e.g. "API key not valid") instead of just the status code.
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return fmt.Errorf("blogger API returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
