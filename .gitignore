@@ -26,7 +26,6 @@ web/static/css/style.css
 config.yaml
 
 # Go
-vendor/
 go.sum.bak
 .air.toml.local
 
