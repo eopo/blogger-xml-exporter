@@ -14,12 +14,12 @@ type FormItem struct {
 	Type string `yaml:"type" json:"type"`
 
 	// Group-only fields
-	Title       string     `yaml:"title,omitempty" json:"title,omitempty"`
-	Collapsible bool       `yaml:"collapsible,omitempty" json:"collapsible,omitempty"`
-	Collapsed   bool       `yaml:"collapsed,omitempty" json:"collapsed,omitempty"`
-	Items       []FormItem `yaml:"items,omitempty" json:"items,omitempty"`
-	Presets     []Preset   `yaml:"presets,omitempty" json:"presets,omitempty"`
-	PresetsSource string   `yaml:"presetsSource,omitempty" json:"presetsSource,omitempty"`
+	Title         string     `yaml:"title,omitempty" json:"title,omitempty"`
+	Collapsible   bool       `yaml:"collapsible,omitempty" json:"collapsible,omitempty"`
+	Collapsed     bool       `yaml:"collapsed,omitempty" json:"collapsed,omitempty"`
+	Items         []FormItem `yaml:"items,omitempty" json:"items,omitempty"`
+	Presets       []Preset   `yaml:"presets,omitempty" json:"presets,omitempty"`
+	PresetsSource string     `yaml:"presetsSource,omitempty" json:"presetsSource,omitempty"`
 
 	// Form data fields
 	Name     string `yaml:"name,omitempty" json:"name,omitempty"`

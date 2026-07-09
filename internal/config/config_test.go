@@ -130,7 +130,7 @@ func TestFormFieldsExtraction(t *testing.T) {
 	form := FormConfig{
 		Items: []FormItem{
 			{
-				Type: "group",
+				Type:  "group",
 				Title: "Group 1",
 				Items: []FormItem{
 					{
@@ -169,11 +169,11 @@ func TestFormFieldsNestedGroups(t *testing.T) {
 	form := FormConfig{
 		Items: []FormItem{
 			{
-				Type: "group",
+				Type:  "group",
 				Title: "Outer",
 				Items: []FormItem{
 					{
-						Type: "group",
+						Type:  "group",
 						Title: "Inner",
 						Items: []FormItem{
 							{
