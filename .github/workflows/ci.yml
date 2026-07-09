@@ -91,7 +91,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
 
       # Builds on every push/PR to validate the Dockerfile;
       # pushes to the registry only on a release tag (refs/tags/v*).
