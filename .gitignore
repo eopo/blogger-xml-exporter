@@ -2,8 +2,9 @@
 .env
 .env.local
 
-# Build artifacts
+# Build artifacts and tools
 bin/
+tools/
 tmp/
 *.exe
 *.o
@@ -32,5 +33,6 @@ go.sum.bak
 # Docker
 docker-compose.override.yml
 
-# Misc
-tools/
+# Coverage
+coverage.out
+coverage.html
