@@ -1,11 +1,28 @@
+# --- VCS / CI metadata ---
 .git
 .gitignore
+.github/
 .env
+
+# --- Documentation ---
 *.md
+
+# --- Build outputs & host-downloaded tooling (rebuilt inside the image) ---
 bin/
 tmp/
 # host-downloaded build tools must not overwrite the container's own binaries
 tools/
-# config is always mounted at runtime, never baked into the image
+
+# --- Container/build definitions (not needed inside the build context) ---
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# --- Config: mounted at runtime, or local/test only ---
 config.yaml
+config.example.yaml
+config.test.yaml
 *.bak
+
+# --- Go tests are irrelevant to the production build ---
+**/*_test.go

@@ -6,6 +6,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # One consolidated PR for all Go module updates; a new run rebuilds this
+    # group PR and supersedes the previous one.
+    groups:
+      go-modules:
+        patterns:
+          - "*"
     pull-request-branch-name:
       separator: "/"
     labels:
@@ -21,18 +27,28 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # One consolidated PR for all GitHub Actions updates.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "github-actions"
     commit-message:
       prefix: "ci(deps):"
 
-  # Docker base image (if applicable)
+  # Docker base images (updates the pinned tag@sha256 digests in the Dockerfile).
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     open-pull-requests-limit: 3
+    # One consolidated PR for all Docker base-image digest updates.
+    groups:
+      docker-base-images:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "docker"
