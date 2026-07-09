@@ -93,8 +93,8 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix={{branch}}-
 
-      - name: Generate build timestamp
-        id: timestamp
+      - name: Set build date
+        id: build-date
         run: echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
       # Builds on every push/PR to validate the Dockerfile;
@@ -108,8 +108,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
-            BUILD_DATE=${{ steps.timestamp.outputs.BUILD_DATE }}
+            VERSION=${{ steps.meta.outputs.version || github.sha }}
+            BUILD_DATE=${{ steps.build-date.outputs.BUILD_DATE }}
             VCS_REF=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
