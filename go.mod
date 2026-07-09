@@ -1,4 +1,4 @@
-module github.com/leokr/blogger-xml-exporter
+module github.com/eopo/blogger-xml-exporter
 
 go 1.26
 

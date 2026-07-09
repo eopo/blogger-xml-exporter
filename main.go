@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/leokr/blogger-xml-exporter/internal/blogger"
-	"github.com/leokr/blogger-xml-exporter/internal/config"
-	"github.com/leokr/blogger-xml-exporter/internal/httpapi"
+	"github.com/eopo/blogger-xml-exporter/internal/blogger"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/httpapi"
 )
 
 func main() {

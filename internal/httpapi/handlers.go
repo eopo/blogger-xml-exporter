@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leokr/blogger-xml-exporter/internal/blogger"
-	"github.com/leokr/blogger-xml-exporter/internal/config"
-	"github.com/leokr/blogger-xml-exporter/internal/xmlgen"
+	"github.com/eopo/blogger-xml-exporter/internal/blogger"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/xmlgen"
 )
 
 // Server holds HTTP handler dependencies.

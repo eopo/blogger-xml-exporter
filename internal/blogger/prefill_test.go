@@ -3,7 +3,7 @@ package blogger
 import (
 	"testing"
 
-	"github.com/leokr/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
 )
 
 // TestStripHTML tests HTML tag removal.

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leokr/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
 )
 
 // TestRenderArrayFieldPositive tests successful rendering of array fields with multiple rows.

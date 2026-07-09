@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leokr/blogger-xml-exporter/internal/blogger"
-	"github.com/leokr/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/blogger"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
 )
 
 // unsafeFilenameChars matches characters unsafe in filenames across platforms.

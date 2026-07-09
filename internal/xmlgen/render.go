@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leokr/blogger-xml-exporter/internal/blogger"
-	"github.com/leokr/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/blogger"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
 )
 
 // node represents an XML tree node.

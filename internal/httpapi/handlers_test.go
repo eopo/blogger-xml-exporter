@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/leokr/blogger-xml-exporter/internal/blogger"
-	"github.com/leokr/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/blogger"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
 )
 
 // TestHealthCheck tests the health endpoint.

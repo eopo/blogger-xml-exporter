@@ -11,7 +11,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
-	"github.com/leokr/blogger-xml-exporter/internal/config"
+	"github.com/eopo/blogger-xml-exporter/internal/config"
 )
 
 var tagPattern = regexp.MustCompile(`<[^>]*>`)

@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1
 
+# Build arguments for versioning
+ARG VERSION=main
+ARG BUILD_DATE
+ARG VCS_REF
+
 # --- Build Stage ---------------------------------------------------------
 FROM golang:1.26-alpine AS builder
 
@@ -25,6 +30,17 @@ RUN make build
 FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /app
+
+# OCI Image Labels (org.opencontainers.image.*)
+LABEL org.opencontainers.image.title="Blogger XML Exporter"
+LABEL org.opencontainers.image.description="Export Blogger.com blog content to XML format"
+LABEL org.opencontainers.image.vendor="eopo"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.source="https://github.com/eopo/blogger-xml-exporter"
+LABEL org.opencontainers.image.documentation="https://github.com/eopo/blogger-xml-exporter#readme"
+LABEL org.opencontainers.image.licenses="ISC"
 
 # config.yaml is intentionally not baked in — it must be mounted at runtime.
 COPY --from=builder /src/bin/blogger-xml-exporter ./blogger-xml-exporter
