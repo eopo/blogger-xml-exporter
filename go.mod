@@ -1,6 +1,6 @@
 module github.com/leokr/blogger-xml-exporter
 
-go 1.22
+go 1.26
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0

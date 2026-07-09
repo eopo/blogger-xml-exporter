@@ -178,14 +178,14 @@ func writeNode(buf *bytes.Buffer, n *node, depth int, xmlCfg config.XMLConfig) e
 			if err != nil {
 				return err
 			}
-			buf.WriteString(fmt.Sprintf(` xmlns:%s="%s"`, ns.Name, escaped))
+			fmt.Fprintf(buf, ` xmlns:%s="%s"`, ns.Name, escaped)
 		}
 		for _, attr := range xmlCfg.Attributes {
 			escaped, err := escapeXML(attr.Value)
 			if err != nil {
 				return err
 			}
-			buf.WriteString(fmt.Sprintf(` %s="%s"`, attr.Name, escaped))
+			fmt.Fprintf(buf, ` %s="%s"`, attr.Name, escaped)
 		}
 	}
 	buf.WriteString(">")
