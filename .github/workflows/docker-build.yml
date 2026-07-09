@@ -21,19 +21,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26'
-
-      - name: Build CSS
-        run: |
-          mkdir -p tools
-          curl -sL https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
-            -o tools/tailwindcss
-          chmod +x tools/tailwindcss
-          ./tools/tailwindcss -i web/tailwind.src.css -o web/static/css/style.css --minify
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 

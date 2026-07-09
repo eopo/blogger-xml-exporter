@@ -3,3 +3,9 @@
 .env
 *.md
 bin/
+tmp/
+# host-downloaded build tools must not overwrite the container's own binaries
+tools/
+# config is always mounted at runtime, never baked into the image
+config.yaml
+*.bak
