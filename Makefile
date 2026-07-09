@@ -21,6 +21,7 @@ setup-css-tools: ## Download Tailwind CSS CLI (auto-detects OS/arch/libc)
 	case "$$ARCH" in \
 	  arm64|aarch64) arch=arm64 ;; \
 	  x86_64|amd64)  arch=x64 ;; \
+	  armv7l|armv6l) echo "INFO: 32-bit ARM not supported for prebuilt Tailwind. Skipping."; exit 0 ;; \
 	  *) echo "ERROR: unsupported arch '$$ARCH'"; exit 1 ;; \
 	esac; \
 	libc=""; \
