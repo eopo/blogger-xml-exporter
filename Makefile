@@ -51,7 +51,7 @@ test-coverage: ## Run Go tests with coverage report
 
 lint: ## Run Go linter (golangci-lint)
 	@[ -x tools/golangci-lint ] || { echo "golangci-lint not found in ./tools. Run 'make setup' first"; exit 1; }
-	./tools/golangci-lint run --timeout=5m
+	./tools/golangci-lint run
 
 fmt: ## Format Go code
 	@[ -x tools/goimports ] || (echo "goimports not found. Run 'make setup' first"; exit 1)
