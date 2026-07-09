@@ -23,7 +23,6 @@ jobs:
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
-          args: --timeout=5m --format=colored-line-number
 
   test-go:
     name: Test Go Code
