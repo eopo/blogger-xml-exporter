@@ -244,4 +244,19 @@ See [Google Cloud Docs](https://developers.google.com/blogger/docs/3.0/getting_s
 
 ## License
 
-MIT
+This project's own code is released under the [BSD Zero Clause License (0BSD)](LICENSE) —
+use it for any purpose without conditions or attribution.
+
+### Bundled third-party components
+
+The following components are shipped with this project and keep their own
+licenses:
+
+| Component                               | Role                                                     | License    |
+|-----------------------------------------|----------------------------------------------------------|------------|
+| [Alpine.js](https://alpinejs.dev)       | UI runtime (`web/static/js/vendor`)                      | MIT        |
+| [flatpickr](https://flatpickr.js.org)   | Date picker (`web/static/js/vendor`, `web/static/css`)   | MIT        |
+| [Tom Select](https://tom-select.js.org) | Select widget (`web/static/js/vendor`, `web/static/css`) | Apache-2.0 |
+| [Tailwind CSS](https://tailwindcss.com) | CSS build tool (compiles `web/static/css/style.css`)     | MIT        |
+
+Go module dependencies are licensed under MIT, BSD-3-Clause, or Apache-2.0.
