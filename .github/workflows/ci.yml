@@ -93,10 +93,6 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix={{branch}}-
 
-      - name: Set build date
-        id: build-date
-        run: echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-
       # Builds on every push/PR to validate the Dockerfile;
       # pushes to the registry only on a release tag (refs/tags/v*).
       - name: Build image (push only on release tag)
@@ -107,9 +103,5 @@ jobs:
           push: ${{ startsWith(github.ref, 'refs/tags/') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VERSION=${{ steps.meta.outputs.version || github.sha }}
-            BUILD_DATE=${{ steps.build-date.outputs.BUILD_DATE }}
-            VCS_REF=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
