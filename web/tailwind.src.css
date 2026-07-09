@@ -1,0 +1,193 @@
+/**
+ * Tailwind CSS v4 source file. Compiles to web/static/css/style.css.
+ * Defines custom components and theme overrides for vendored widgets
+ * (Tom Select, Flatpickr) to ensure a cohesive UI design.
+ *
+ * Tailwind v4 uses CSS-based themes (no tailwind.config.js) and
+ * automatically scans class names in files relative to this one.
+ */
+@import "tailwindcss";
+
+@theme {
+	--color-primary: #2563eb;       /* Primary color (overridden by config) */
+	--color-primary-dark: #1e40af;  /* Dark variant (overridden by config) */
+	--color-primary-light: #3b82f6; /* Light variant (overridden by config) */
+}
+
+@layer components {
+	/* Collapsible group sections using native <details>/<summary> */
+	.form-group {
+		@apply border border-gray-200 rounded-lg mb-5 bg-white;
+		overflow: visible; /* Allow dropdowns to overflow group boundaries */
+	}
+	.form-group--plain {
+		@apply border-none mb-0;
+	}
+	.form-group__summary {
+		@apply cursor-pointer select-none bg-gray-50 border-b border-gray-200 px-4 py-3 font-semibold text-primary-dark marker:text-primary;
+	}
+	.form-group--plain .form-group__summary {
+		@apply hidden;
+	}
+	.form-group__title {
+		@apply select-none bg-gray-50 border-b border-gray-200 px-4 py-3 font-semibold text-primary-dark;
+	}
+	.form-group--plain .form-group__title {
+		@apply hidden;
+	}
+	.form-group__body {
+		@apply p-4 flex flex-col gap-4;
+	}
+	.form-group--plain .form-group__body {
+		@apply p-0;
+	}
+
+	/* Rows with adjacent fields. Uses 6-column grid on mobile, 12-column on sm+.
+	Each field's width (col-span-N) remains fixed (see WIDTH_CLASSES in app.js).
+	Fields wrap responsively: narrower screens stack fewer fields per row. */
+	.form-row {
+		@apply grid grid-cols-6 sm:grid-cols-12 gap-4;
+	}
+	.form-row__field {
+		@apply col-span-6 flex flex-col;
+	}
+
+	/* Nested subgroup (single level, see app.js buildRows) */
+	.form-subgroup {
+		@apply border border-gray-100 rounded-lg p-3.5 bg-gray-50/60 flex flex-col gap-4;
+	}
+	.form-subgroup__title {
+		@apply block font-semibold text-sm text-primary-dark mb-1;
+	}
+
+	/* Standard form fields */
+	.field {
+		@apply block;
+	}
+	.field:has(.post-picker-row) {
+		@apply border border-gray-300 rounded-lg px-3 py-2 bg-white;
+	}
+	.field__label {
+		@apply block font-semibold text-sm text-gray-700 mb-1.5;
+	}
+	.field__input,
+	.field__textarea {
+		@apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white transition-colors;
+	}
+	/* No border for select in post-picker row */
+	.post-picker-row .field__input {
+		@apply border-0 px-0 py-0;
+	}
+	.field__input:focus,
+	.field__textarea:focus {
+		@apply outline-none border-primary ring-2 ring-primary/20;
+	}
+	.post-picker-row .field__input:focus {
+		@apply ring-0;
+	}
+	.field__textarea {
+		@apply min-h-[140px] resize-y;
+	}
+
+	/* Array fields (repeatable row groups) */
+	.field--array {
+		@apply border border-gray-200 rounded-lg p-3.5;
+	}
+	.array-rows {
+		@apply flex flex-col gap-3 mb-3;
+	}
+	.array-row {
+		@apply flex flex-wrap items-end gap-3 p-2.5 border border-gray-200 rounded-lg bg-gray-50;
+	}
+	.array-row .field {
+		@apply flex-1 min-w-40 mb-0;
+	}
+	.array-row__remove,
+	.array-add-btn {
+		@apply appearance-none border border-gray-300 bg-white text-gray-700 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-colors hover:border-primary hover:text-primary;
+	}
+
+	/* Post picker using Tom Select dropdown */
+	.post-picker-row {
+		@apply flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5;
+	}
+
+	/* Presets: Quick-fill templates for multiple fields in a group */
+	/* Uses same classes as post-picker-row */
+
+	/* Primary and secondary buttons */
+	.button {
+		@apply appearance-none border-none bg-primary text-white text-sm font-semibold px-6 py-3 rounded-lg cursor-pointer transition-colors hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed;
+	}
+	.button--secondary {
+		@apply bg-white text-gray-700 border border-gray-300 hover:bg-white hover:border-primary hover:text-primary;
+	}
+	.button--small {
+		@apply px-3 py-1.5 text-xs;
+	}
+
+	.status {
+		@apply min-h-5 mt-4 text-sm text-gray-500;
+	}
+	.status--error {
+		@apply text-red-700;
+	}
+	.status--success {
+		@apply text-emerald-700;
+	}
+}
+
+/* Tom Select dropdown styling with configurable primary color */
+.ts-control {
+	@apply rounded-lg! border-gray-300! min-h-[42px]! py-1.5! pr-8!;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.6rem center;
+	background-size: 1rem;
+}
+.ts-control.focus {
+	@apply border-primary! shadow-none!;
+	box-shadow: 0 0 0 2px var(--color-primary) / 0.2 !important;
+}
+.ts-dropdown {
+	@apply rounded-lg! border-gray-200! shadow-lg!;
+}
+.ts-dropdown .active {
+	@apply bg-primary/10! text-primary-dark!;
+}
+.post-option {
+	@apply flex items-center justify-between gap-3;
+}
+.post-option__title {
+	@apply font-medium;
+}
+.post-option__date {
+	@apply text-xs text-gray-400;
+}
+.no-results {
+	@apply px-3 py-2 text-sm text-gray-400;
+}
+
+/* Tom Select: Dropdown floats above all elements including group boundaries */
+.ts-wrapper.single.input-active .ts-dropdown {
+	position: absolute;
+	z-index: 50;
+}
+.ts-dropdown {
+	z-index: 50;
+}
+
+/* Flatpickr date picker styling with configurable primary color */
+	/* Uses CSS variables injected by app.js */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+	background: var(--color-primary, #2563eb) !important;
+	border-color: var(--color-primary, #2563eb) !important;
+}
+.flatpickr-day.today {
+	border-color: var(--color-primary, #2563eb) !important;
+}
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+	color: var(--color-primary-dark, #1e40af);
+}

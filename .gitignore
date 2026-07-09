@@ -1,0 +1,36 @@
+# Environment variables
+.env
+.env.local
+
+# Build artifacts
+bin/
+tmp/
+*.exe
+*.o
+*.a
+*.so
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated files
+web/static/css/style.css
+
+# Local config (override example config)
+config.yaml
+
+# Go
+vendor/
+go.sum.bak
+.air.toml.local
+
+# Docker
+docker-compose.override.yml
+
+# Misc
+tools/

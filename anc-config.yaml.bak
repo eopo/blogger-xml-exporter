@@ -1,0 +1,395 @@
+# Konfiguration der Blogger-XML-Exporter-Anwendung.
+# Credentials (API-Key) werden NICHT hier, sondern über die
+# Umgebungsvariable BLOGGER_API_KEY bereitgestellt.
+#
+# Formular (form.items) und Ausgabe-XML (xml.fields) sind bewusst komplett
+# getrennt konfiguriert (siehe README "Architektur: Formular vs. XML"):
+#   - form.items definiert NUR das Formular: ein Baum aus Gruppen (Abschnitte
+#     /Zeilen) und Feldern, inkl. Vorbelegung (source/template) und
+#     Darstellung. Datenmodell und UI-Anordnung sind hier bewusst
+#     zusammen an einer Stelle gepflegt (siehe unten).
+#   - xml.fields definiert NUR die Ausgabestruktur: wohin (xmlPath) welcher
+#     Wert geschrieben wird. Ein XML-Feld bezieht seinen Wert entweder per
+#     "formField" direkt aus einem Formularfeld, per "template" (dieselbe
+#     Template-Engine wie bei form.items, inkl. {{source "dot.pfad"}} für
+#     den Rohpost) oder ist - ohne formField/template - ein fester,
+#     statischer Text, der im Formular gar nicht erst auftaucht.
+
+blogger:
+  blogId: "7764126"
+  maxResults: 20
+
+server:
+  port: 8080
+
+# Im Browser sichtbare Beschriftung der Anwendung.
+site:
+  title: "ANC newswire XML"     # <title>-Element (Browser-Tab)
+  heading: "ANC newswire XML"   # sichtbare Überschrift (h1)
+
+# Optionales, von außen mountbares Verzeichnis (z.B. Docker-Volume) mit
+# Favicon/Logo. dir leer = Route deaktiviert, Standard-Favicon/kein Logo.
+assets:
+  dir: ""            # z.B. "/app/assets" (siehe docker-compose.yml)
+  favicon: ""        # Dateiname innerhalb von dir, z.B. "favicon.ico"
+  logo: ""           # Dateiname innerhalb von dir, z.B. "logo.png"
+
+# Formular-Baum: "type" ist der EINE Diskriminator jedes Items (kein
+# separates "kind" mehr) - "group" für Abschnitte, alles andere ist ein
+# Formularfeld. Gruppen dürfen beliebig tief ineinander verschachtelt
+# werden; Datenmodell (Feld-Eigenschaften) und Darstellung (Zeilen/Breiten)
+# stehen bewusst zusammen in EINER Struktur.
+#
+# Gruppen-Eigenschaften (type: group):
+#   title:       Abschnittstitel (leer = kein sichtbarer Titel)
+#   collapsible/collapsed: Spoiler-Verhalten (auf-/zuklappbar)
+#   items:       Kind-Elemente (Felder, Arrays und/oder weitere Gruppen)
+#   presets/presetsSource: siehe "Presets" weiter unten
+#
+# Feld-Eigenschaften (alle anderen type-Werte):
+#   name/label/type: text | textarea | date (Flatpickr) | list (kommagetrennt)
+#                    | array (wiederholbare Zeilen mit "fields"-Unterschema)
+#                    | select (Tom Select; "options" fest, "optionsSource"
+#                    dynamisch aus dem Post, "allowCustom" erlaubt zusätzlich
+#                    freie Werte)
+#   source/template: GENAU EINES optional - source: Dot-Pfad in das
+#                    Blogger-Post-JSON; template: Go-text/template
+#                    (Sprig-Funktionen + "source"/"stripHTML"/
+#                    "unescapeUnicode", siehe README). Ohne beides bleibt
+#                    das Feld leer und wird rein manuell ausgefüllt.
+#   hidden:          blendet das Feld im Formular aus (Wert bleibt Teil des
+#                    Datenmodells, referenzierbar von anderen Templates/
+#                    xml.fields). Rein statische, im UI nie sichtbare Werte
+#                    (z.B. feste Lieferantendaten) brauchen dagegen KEIN
+#                    (verstecktes) Feld mehr - die gehören direkt in
+#                    xml.fields.
+#
+# Layout (row/width gelten für jedes Item als Kind-Element einer Gruppe):
+#   row:   Items mit gleicher, positiver row-Nummer innerhalb derselben
+#          Gruppe stehen nebeneinander (Zeile); ohne row (bzw. 0) bekommt
+#          ein Item eine eigene, volle Zeile.
+#   width: Spaltenzahl eines 12-Spalten-Rasters (1-12); ohne Angabe wird die
+#          Breite anhand der Item-Anzahl der Zeile automatisch gleichmäßig
+#          verteilt. Reicht der Platz nicht (schmaler Bildschirm), rutschen
+#          Items einer Zeile automatisch um: eine Zeile mit den Breiten
+#          6/3/3 zeigt dort das 6er-Feld allein und die beiden 3er-Felder
+#          nebeneinander darunter, statt komplett untereinander gestapelt
+#          zu werden.
+#
+# Presets: Eine Gruppe kann "presets" definieren - Schnellausfüll-Vorlagen,
+# die auf Knopfdruck mehrere ihrer direkten Felder auf einmal belegen.
+# "values" ist Feldname -> Go-Template (dieselbe Engine, inkl. "source" und
+# Zugriff auf die aktuellen Formularwerte). Mit "presetsSource" (Dot-Pfad
+# auf eine Liste im Post, z.B. "labels") wird GENAU EIN Preset als Vorlage
+# je Listen-Element ausgewertet ("." im Template ist das jeweilige Element)
+# - so entstehen dynamisch so viele Presets wie Einträge in der Liste.
+form:
+  items:
+    - type: group
+      title: "Basisdaten"
+      items:
+        - type: text
+          name: titel
+          label: "Titel"
+          source: title
+          row: 1
+          width: 8
+        - type: date
+          name: produktionsdatum
+          label: "Produktionsdatum"
+          source: published
+          row: 1
+          width: 4
+        - type: text
+          name: drehort_ort
+          label: "Drehort"
+          # Extrahiert den Ort zwischen "ANC-NEWS " und " - " aus dem HTML-
+          # Inhalt. regexFind kann keine Capture-Group liefern (nur den
+          # Gesamttreffer), daher regexReplaceAll mit Variable (s.o.).
+          template: '{{ $c := source "content" | unescapeUnicode | stripHTML }}{{ regexReplaceAll "(?s).*ANC-NEWS\\s+(.+?)\\s+-.*" $c "${1}" | trim }}'
+          row: 2
+          width: 6
+        - type: text
+          name: drehort_region
+          label: "Region"
+          template: "Nordrhein-Westfalen"
+          row: 2
+          width: 6
+        - type: text
+          name: titel2
+          label: "Titel 2"
+          template: '{{ source "content" | unescapeUnicode | stripHTML | splitList "\n" | first }}'
+          row: 3
+          width: 12
+
+        - type: textarea
+          name: redaktion_beschreibung
+          label: "Redaktion-Beschreibung"
+          row: 4
+          # Sprigs regexReplaceAll hat die Signatur (pattern, s, replacement) -
+          # "s" ist der ZWEITE Parameter, nicht der letzte, daher hier über
+          # Variablen explizit befüllt. Zweiter Schritt entfernt den festen
+          # Bestell-/Impressum-Block am Ende samt davor stehender, variabel
+          # vieler Leerzeilen.
+          template: '{{ $c := source "content" | unescapeUnicode | stripHTML }}{{ $t := regexReplaceAll "(?s).*ANC-NEWS\\s+.+?\\s+-\\s+(.*)" $c "${1}" }}{{ regexReplaceAll "(?s)\\s*Bestellung von Bewegtbild.*" $t "" | trim }}'
+        - type: textarea
+          name: bildbeschreibung
+          label: "Bildbeschreibung"
+          row: 5
+        - type: text
+          name: kurztitel
+          label: "Kurztitel"
+          row: 6
+          width: 12
+        - type: text
+          name: kurztitel_information
+          label: "Kurztitel-Information"
+          row: 7
+          width: 12
+
+    - type: group
+      title: Besteller/Sendung
+      presets:
+        - label: Lokalzeit
+          values:
+            besteller_name: "Manuel"
+            besteller_nachname: "Muster"
+            besteller_mailadresse: "manuel.muster@wdr.de"
+            besteller_redaktion: "Lokalzeit"
+            sendungskuerzel: "lok"
+      items:
+        - type: text
+          name: besteller_name
+          label: "Besteller-Vorname"
+          row: 1
+          width: 6
+        - type: text
+          name: besteller_nachname
+          label: "Besteller-Nachname"
+          row: 1
+          width: 6
+        - type: text
+          name: besteller_mailadresse
+          label: "Besteller-Mailadresse"
+          row: 2
+          width: 6
+        - type: text
+          name: besteller_redaktion
+          label: "Besteller-Redaktion"
+          row: 2
+          width: 6
+        - type: text
+          name: sendungskuerzel
+          label: "Sendungskürzel"
+          row: 3
+          width: 6
+        - type: select
+          name: kategorie
+          label: "Kategorie"
+          options:
+            - value: Blaulicht
+              label: "Blaulicht"
+            - value: Verkehr
+              label: "Verkehr"
+            - value: Politik
+              label: "Politik"
+          allowCustom: true
+          row: 3
+          width: 6
+    - type: group
+      title: "Redaktion"
+      collapsible: true
+      collapsed: true
+      items:
+        - type: text
+          name: bearbeitungszustand
+          label: "Bearbeitungszustand"
+          row: 1
+          width: 6
+        - type: text
+          name: herstellungsvermerk
+          label: "Herstellungsvermerk"
+          row: 1
+          width: 6
+        - type: array
+          name: zusatzinformationen
+          label: "Zusatzinformationen"
+          row: 2
+          fields:
+            - type: text
+              name: Typ
+              label: "Typ"
+            - type: text
+              name: Wert
+              label: "Wert"
+
+        # Array-Feld: beliebig viele Links; erste Zeile wird automatisch mit
+        # der Post-URL vorbefüllt (Fallback auf eine feste Adresse ohne Post).
+        - type: array
+          name: linkliste
+          label: "Links"
+          row: 3
+          fields:
+            - type: text
+              name: HttpAdresse
+              label: "HTTP-Adresse"
+              template: '{{ with source "url" }}{{ . }}{{ else }}https://anc-newswire.de{{ end }}'
+
+        - type: text
+          name: sclipname
+          label: "Clipname"
+          row: 4
+          width: 4
+        - type: text
+          name: file_size
+          label: "Dateigröße"
+          row: 4
+          width: 4
+        - type: text
+          name: bildformat
+          label: "Bildformat"
+          template: "16:9"
+          row: 4
+          width: 4
+        - type: text
+          name: quellsystem_kodierung
+          label: "Quellsystem-Kodierung"
+          row: 5
+          width: 4
+        - type: text
+          name: quellsystem_id
+          label: "Quellsystem-ID"
+          row: 5
+          width: 4
+        - type: text
+          name: quellsystem_version
+          label: "Quellsystem-Version"
+          row: 5
+          width: 4
+    - type: text
+      name: filename
+      label: "Dateiname (ohne .xml)"
+      width: 12
+
+
+
+# Ausgabe-XML: Wurzelelement, Namensraum-Präfixe, statische Wurzel-Attribute
+# (z.B. xsi:schemaLocation), Dateiname sowie der komplette Elementbaum
+# (fields). Siehe templates/ANC.xml für ein Beispiel-Zieldokument, an dem
+# sich diese Konfiguration orientiert.
+#
+# Jedes xml.fields-Element benötigt "xmlPath" ("/"-getrennt; Zwischen-
+# elemente werden bei gemeinsamem Präfix wiederverwendet, z.B. teilen sich
+# alle Lieferant-Felder das Element "mat:lieferant") sowie optional GENAU
+# EINES von "formField" (1:1-Wert eines Formularfelds) oder "template"
+# (Go-text/template mit Zugriff auf ALLE Formularwerte per {{.feldname}}
+# sowie {{source "dot.pfad"}} auf den Rohpost). Ohne beides ist der Wert
+# fest ein leeres Element. type "array" wiederholt das durch xmlPath
+# bezeichnete Element je Formular-Zeile (formField muss auf ein
+# Array-Feld zeigen), type "list" zerlegt einen kommagetrennten String in
+# wiederholte Elemente.
+xml:
+  root: "mat:Material"
+
+  # Go-text/template (dieselbe Engine wie oben) für den Dateinamen des
+  # XML-Downloads, OHNE ".xml"-Endung (wird immer automatisch angehängt).
+  # Das Ergebnis wird serverseitig IMMER zu einem gültigen, sicheren
+  # Dateinamen bereinigt (siehe README); leer/ungültig fällt zurück auf
+  # "post".
+  filename: '{{ .filename | default "post"}}'
+
+  namespaces:
+    - name: mat
+      value: "http://www.mdr.de/material"
+    - name: xsi
+      value: "http://www.w3.org/2001/XMLSchema-instance"
+  attributes:
+    - name: "xsi:schemaLocation"
+      value: "http://www.mdr.de/material/2020-04-07MaterialV18.5.xsd"
+  fields:
+    - xmlPath: "mat:kategorie"
+      formField: kategorie
+    - xmlPath: "mat:titel"
+      formField: titel
+    - xmlPath: "mat:titel2"
+      formField: titel2
+    - xmlPath: "mat:kurztitel"
+      formField: kurztitel
+    - xmlPath: "mat:kurztitel_information"
+      formField: kurztitel_information
+    - xmlPath: "mat:sendungskuerzel"
+      formField: sendungskuerzel
+    - xmlPath: "mat:produktionsdatum"
+      formField: produktionsdatum
+    - xmlPath: "mat:bildformat"
+      formField: bildformat
+    - xmlPath: "mat:bearbeitungszustand"
+      formField: bearbeitungszustand
+    - xmlPath: "mat:herstellungsvermerk"
+      formField: herstellungsvermerk
+    - xmlPath: "mat:redaktionBeschreibung"
+      formField: redaktion_beschreibung
+    - xmlPath: "mat:bildbeschreibung"
+      formField: bildbeschreibung
+
+    - xmlPath: "mat:zusatzinformationen/mat:zusatzinformation"
+      type: array
+      formField: zusatzinformationen
+      fields:
+        - xmlPath: "mat:Typ"
+          formField: Typ
+        - xmlPath: "mat:Wert"
+          formField: Wert
+
+    - xmlPath: "mat:linkliste/mat:link"
+      type: array
+      formField: linkliste
+      fields:
+        - xmlPath: "mat:HttpAdresse"
+          formField: HttpAdresse
+
+    - xmlPath: "mat:drehort/mat:ort"
+      formField: drehort_ort
+    - xmlPath: "mat:drehort/mat:region"
+      formField: drehort_region
+
+    # Lieferant: feste Stammdaten, rein statisch in xml.fields hinterlegt -
+    # kein (verstecktes) Formularfeld mehr nötig, taucht im UI nirgends auf.
+    - xmlPath: "mat:lieferant/mat:organisation"
+      template: "ANC-NEWS TV GmbH"
+    - xmlPath: "mat:lieferant/mat:strasse"
+      template: "Laaksweg 7"
+    - xmlPath: "mat:lieferant/mat:ort"
+      template: "Essen"
+    - xmlPath: "mat:lieferant/mat:plz"
+      template: "45359"
+    - xmlPath: "mat:lieferant/mat:land"
+      template: "Deutschland"
+    - xmlPath: "mat:lieferant/mat:sammelmailadresse"
+      template: "essen@anc-news.de"
+    - xmlPath: "mat:lieferant/mat:technikmailadresse"
+      template: "essen@anc-news.de"
+    - xmlPath: "mat:lieferant/mat:sammeltelefon"
+      template: "02012486281"
+
+    - xmlPath: "mat:sClipname"
+      formField: sclipname
+    - xmlPath: "mat:fileSize"
+      formField: file_size
+
+    - xmlPath: "mat:quellsystem/mat:QuellsystemKodierung"
+      formField: quellsystem_kodierung
+    - xmlPath: "mat:quellsystem/mat:QuellsystemID"
+      formField: quellsystem_id
+    - xmlPath: "mat:quellsystem/mat:QuellsystemVersion"
+      formField: quellsystem_version
+
+    - xmlPath: "mat:besteller/mat:BestellerName"
+      formField: besteller_name
+    - xmlPath: "mat:besteller/mat:BestellerNachname"
+      formField: besteller_nachname
+    - xmlPath: "mat:besteller/mat:BestellerMailadresse"
+      formField: besteller_mailadresse
+    - xmlPath: "mat:besteller/mat:BestellerRedaktion"
+      formField: besteller_redaktion
+

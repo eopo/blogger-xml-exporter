@@ -1,0 +1,205 @@
+# Blogger XML Exporter Configuration
+# Credentials (API key) are NOT stored here but passed via BLOGGER_API_KEY environment variable.
+#
+# Configuration separates form layout from XML output structure deliberately:
+#   - form.items: Tree of sections and fields defining the form UI, field types,
+#     prefilling logic (source/template), and layout (grouping, rows, widths).
+#   - xml.fields: Output structure only - defines where (xmlPath) each value is written.
+#     Values come from formField (direct field reference), template (Go text/template),
+#     or static text without either.
+
+blogger:
+  blogId: "1234567890123456789"    # Google Blogger blog ID
+  maxResults: 20                    # Max posts in dropdown
+
+server:
+  port: 8080
+
+# Theme colors: primary color and optional dark/light variants.
+# Hex format (#RRGGBB). Remove to use defaults (blue theme).
+theme:
+  primaryColor: "#2563eb"           # Primary brand color (e.g., link color, buttons)
+  # darkColor: "#1e40af"            # Optional: darker variant for text/headers
+  # lightColor: "#3b82f6"           # Optional: lighter variant for backgrounds
+
+# Browser-visible labels
+site:
+  title: "XML Exporter"              # <title> element (browser tab)
+  heading: "XML Exporter"            # Visible heading (h1)
+
+# Optional external assets directory (e.g., Docker volume mount) for favicon/logo.
+# Leave dir empty to disable; if set, favicon/logo names are filenames within that directory.
+assets:
+  dir: ""                            # e.g., "/app/assets"
+  favicon: ""                        # e.g., "favicon.ico"
+  logo: ""                           # e.g., "logo.png"
+
+# Form definition: tree of groups (sections) and fields.
+# Types: "group" for collapsible/expandable sections; any other type is a form field.
+# Layout: row/width position items horizontally in a 12-column grid.
+form:
+  items:
+    # Example: Basic data section
+    - type: group
+      title: "Article Details"
+      items:
+        - type: text
+          name: title
+          label: "Title"
+          source: title              # Auto-fill from blog post title
+          row: 1
+          width: 8
+        - type: date
+          name: published
+          label: "Publication Date"
+          source: published          # Auto-fill from blog post date
+          row: 1
+          width: 4
+        - type: textarea
+          name: description
+          label: "Description"
+          row: 2
+        - type: text
+          name: location
+          label: "Location"
+          row: 3
+          width: 6
+        - type: text
+          name: region
+          label: "Region"
+          row: 3
+          width: 6
+
+    # Example: Section with preset templates
+    - type: group
+      title: "Author/Contact"
+      presets:
+        - label: "John Doe"
+          values:
+            author_first_name: "John"
+            author_last_name: "Doe"
+            author_email: "john@example.com"
+            author_department: "News"
+        - label: "Jane Smith"
+          values:
+            author_first_name: "Jane"
+            author_last_name: "Smith"
+            author_email: "jane@example.com"
+            author_department: "Features"
+      items:
+        - type: text
+          name: author_first_name
+          label: "First Name"
+          row: 1
+          width: 6
+        - type: text
+          name: author_last_name
+          label: "Last Name"
+          row: 1
+          width: 6
+        - type: text
+          name: author_email
+          label: "Email"
+          row: 2
+          width: 6
+        - type: select
+          name: author_department
+          label: "Department"
+          options:
+            - value: News
+              label: "News"
+            - value: Features
+              label: "Features"
+            - value: Opinion
+              label: "Opinion"
+          allowCustom: true
+          row: 2
+          width: 6
+
+    # Example: Collapsible metadata section
+    - type: group
+      title: "Metadata"
+      collapsible: true
+      collapsed: true
+      items:
+        - type: text
+          name: tags
+          label: "Tags (comma-separated)"
+          row: 1
+        - type: array
+          name: references
+          label: "External References"
+          row: 2
+          fields:
+            - type: text
+              name: title
+              label: "Title"
+            - type: text
+              name: url
+              label: "URL"
+        - type: text
+          name: filename
+          label: "Output Filename (without .xml)"
+          width: 12
+          row: 3
+
+# XML output structure: root element, namespaces, attributes, and fields.
+# Each field needs xmlPath (slash-separated) and exactly ONE of:
+#   - formField: direct link to a form field
+#   - template: Go text/template (access form values as {{.fieldname}})
+#   - neither: static/empty element
+xml:
+  root: "item"                       # Root XML element name
+
+  # Filename template for download (without .xml extension, auto-added).
+  # Go text/template syntax; empty defaults to "post".
+  filename: '{{ .filename | default "post" }}'
+
+  namespaces:
+    - name: ex
+      value: "http://example.org/schema"
+
+  attributes:
+    - name: "xmlns:ex"
+      value: "http://example.org/schema"
+
+  fields:
+    # Example: direct form field references
+    - xmlPath: "header/title"
+      formField: title
+    - xmlPath: "header/published"
+      formField: published
+    - xmlPath: "body/description"
+      formField: description
+    - xmlPath: "location/city"
+      formField: location
+    - xmlPath: "location/region"
+      formField: region
+
+    # Example: static/template-generated content
+    - xmlPath: "metadata/generator"
+      template: "Blogger XML Exporter"
+    - xmlPath: "metadata/schemaVersion"
+      template: "1.0"
+
+    # Example: repeated elements from array fields
+    - xmlPath: "references/reference"
+      type: array
+      formField: references
+      fields:
+        - xmlPath: "title"
+          formField: title
+        - xmlPath: "url"
+          formField: url
+
+    # Example: author data (static company info, form author fields)
+    - xmlPath: "author/company"
+      template: "Example Corp"
+    - xmlPath: "author/firstName"
+      formField: author_first_name
+    - xmlPath: "author/lastName"
+      formField: author_last_name
+    - xmlPath: "author/email"
+      formField: author_email
+    - xmlPath: "author/department"
+      formField: author_department

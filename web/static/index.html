@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Blogpost → XML Exporter</title>
+	<link rel="stylesheet" href="css/vendor-tom-select.css" />
+	<link rel="stylesheet" href="css/vendor-flatpickr.css" />
+	<link rel="stylesheet" href="css/style.css" />
+	<!--
+		Reihenfolge ist wichtig: alpine.min.js initialisiert sich selbst
+		während der eigenen (defer-)Ausführung, sobald document.readyState
+		nicht mehr "loading" ist - das ist bei defer-Skripten bereits der
+		Fall, BEVOR nachfolgende defer-Skripte laufen. app.js (definiert
+		die globale Funktion app()) muss daher synchron VOR Alpine geladen
+		werden, sonst meldet Alpine "app is not defined".
+	-->
+	<script src="js/vendor/tom-select.min.js"></script>
+	<script src="js/vendor/flatpickr.min.js"></script>
+	<script src="js/app.js"></script>
+	<script src="js/vendor/alpine.min.js" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+	<div class="app max-w-4xl mx-auto px-4 py-6 sm:px-5 sm:py-12" x-data="app()">
+		<header class="text-center mb-6 sm:mb-8">
+			<img x-show="assets.logo" :src="assets.logo" alt="" class="mx-auto mb-3 h-12 sm:h-16 w-auto" />
+			<h1 class="text-2xl sm:text-3xl font-bold text-anc-dark mb-2" x-text="site.heading"></h1>
+			<p class="text-gray-500 text-sm sm:text-base">Post auswählen, Felder prüfen und als XML herunterladen.</p>
+		</header>
+
+		<main class="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+			<!-- Suchbares Post-Dropdown (Tom Select): zeigt Titel + Datum, mit Live-Suche. -->
+			<div class="field mb-6">
+				<span class="field__label">Blogpost</span>
+				<div class="post-picker-row">
+					<select x-ref="postSelect" class="field__input"></select>
+					<button type="button" class="button button--secondary" x-show="hasSelectedPost" @click="clearPost()">Zurücksetzen</button>
+					<button type="button" class="button button--secondary" x-show="postsError" @click="loadPosts()">Neu laden</button>
+				</div>
+				<p class="text-xs text-gray-400 mt-1" x-show="postsError">Fehler beim Laden der Posts.</p>
+			</div>
+
+			<form @submit.prevent="submitGenerate()">
+				<template x-for="(group, gIdx) in effectiveGroups" :key="gIdx">
+					<details class="form-group" :class="{ 'form-group--plain': !group.title }" :open="!group.collapsible || !group.collapsed">
+						<summary class="form-group__summary" x-show="group.title && group.collapsible" x-text="group.title"></summary>
+						<div class="form-group__title" x-show="group.title && !group.collapsible" x-text="group.title"></div>
+						<div class="form-group__body">
+							<!-- Presets: Dropdown zum Schnellausfüllen mehrerer Felder dieser Gruppe auf einmal. -->
+							<div class="field" x-show="group.presets.length">
+								<span class="field__label" x-text="'Vorlage'"></span>
+								<div class="post-picker-row">
+									<select class="field__input presets-select" 
+										@change="
+											const idx = parseInt($el.value);
+											if (!isNaN(idx) && idx >= 0) {
+												applyPreset(group.presets[idx]);
+												if ($el.tomselect) $el.tomselect.setValue('');
+											}
+										"
+										x-effect="updatePresetsDropdown($el, group.presets)"></select>
+									<button type="button" class="button button--secondary" @click="resetPreset(group.presets)">
+										Zurücksetzen
+									</button>
+								</div>
+							</div>
+
+							<template x-for="(row, rIdx) in group.rows" :key="rIdx">
+								<div class="form-row">
+									<template x-for="entry in row" :key="entry.item.name || entry.item.title">
+										<div class="form-row__field" :class="entry.widthClass">
+											<!-- Verschachtelte Untergruppe (max. eine Ebene, siehe app.js buildRows -
+											Felder darin sind garantiert keine weiteren Gruppen mehr) -->
+											<template x-if="entry.isGroup">
+												<div class="form-subgroup">
+													<span class="form-subgroup__title" x-show="entry.item.title" x-text="entry.item.title"></span>
+													<template x-for="(subRow, srIdx) in entry.rows" :key="srIdx">
+														<div class="form-row">
+															<template x-for="subEntry in subRow" :key="subEntry.item.name">
+																<div class="form-row__field" :class="subEntry.widthClass">
+																	<!-- Array-Feld -->
+																	<template x-if="subEntry.item.type === 'array'">
+																		<div class="field field--array">
+																			<span class="field__label" x-text="subEntry.item.label || subEntry.item.name"></span>
+																			<div class="array-rows">
+																				<template x-for="(row2, idx) in (values[subEntry.item.name] || [])" :key="idx">
+																					<div class="array-row">
+																						<template x-for="sub in subEntry.item.fields" :key="sub.name">
+																							<label class="field">
+																								<span class="field__label" x-text="sub.label || sub.name"></span>
+																								<input type="text" class="field__input" x-model="row2[sub.name]" />
+																							</label>
+																						</template>
+																						<button type="button" class="array-row__remove" @click="removeArrayRow(subEntry.item, idx)">Eintrag entfernen</button>
+																					</div>
+																				</template>
+																			</div>
+																			<button type="button" class="array-add-btn" @click="addArrayRow(subEntry.item)">+ Eintrag hinzufügen</button>
+																		</div>
+																	</template>
+
+																	<!-- Select-Feld (Tom Select) -->
+																	<template x-if="subEntry.item.type === 'select'">
+																		<label class="field">
+																			<span class="field__label" x-text="subEntry.item.label || subEntry.item.name"></span>
+																			<select
+																				x-init="
+																					let ts = new TomSelect($el, {
+																						create: subEntry.item.allowCustom || false,
+																						persist: false,
+																						options: selectOptionsFor(subEntry.item),
+																						items: values[subEntry.item.name] ? [values[subEntry.item.name]] : [],
+																						onChange: (v) => { values[subEntry.item.name] = v; },
+																					});
+																					$watch(() => values[subEntry.item.name], (v) => { if (ts.getValue() !== (v || '')) ts.setValue(v || '', true); });
+																					$watch(() => values[subEntry.item.name + '__options'], () => { ts.clearOptions(); selectOptionsFor(subEntry.item).forEach((o) => ts.addOption(o)); ts.refreshOptions(false); });
+																				"
+																			></select>
+																		</label>
+																	</template>
+
+																	<!-- Datumsfeld (Flatpickr) -->
+																	<template x-if="subEntry.item.type === 'date'">
+																		<label class="field">
+																			<span class="field__label" x-text="subEntry.item.label || subEntry.item.name"></span>
+																			<input
+																				type="text"
+																				class="field__input"
+																				x-init="
+																					let fp = flatpickr($el, {
+																						dateFormat: 'Y-m-d',
+																						allowInput: true,
+																						defaultDate: values[subEntry.item.name] || null,
+																						onChange: (dates, str) => { values[subEntry.item.name] = str; },
+																					});
+																					$watch(() => values[subEntry.item.name], (v) => { if ($el.value !== (v || '')) fp.setDate(v || '', false); });
+																				"
+																			/>
+																		</label>
+																	</template>
+
+																	<!-- Standardfelder: text/textarea/list -->
+																	<template x-if="!['array', 'select', 'date'].includes(subEntry.item.type)">
+																		<label class="field">
+																			<span class="field__label" x-text="subEntry.item.label || subEntry.item.name"></span>
+																			<textarea x-show="subEntry.item.type === 'textarea'" class="field__textarea" x-model="values[subEntry.item.name]"></textarea>
+																			<input x-show="subEntry.item.type !== 'textarea'" type="text" class="field__input" x-model="values[subEntry.item.name]" />
+																		</label>
+																	</template>
+																</div>
+															</template>
+														</div>
+													</template>
+												</div>
+											</template>
+
+											<!-- Array-Feld: wiederholbare Zeilengruppe -->
+											<template x-if="!entry.isGroup && entry.item.type === 'array'">
+												<div class="field field--array">
+													<span class="field__label" x-text="entry.item.label || entry.item.name"></span>
+													<div class="array-rows">
+														<template x-for="(row2, idx) in (values[entry.item.name] || [])" :key="idx">
+															<div class="array-row">
+																<template x-for="sub in entry.item.fields" :key="sub.name">
+																	<label class="field">
+																		<span class="field__label" x-text="sub.label || sub.name"></span>
+																		<input type="text" class="field__input" x-model="row2[sub.name]" />
+																	</label>
+																</template>
+																<button type="button" class="array-row__remove" @click="removeArrayRow(entry.item, idx)">Eintrag entfernen</button>
+															</div>
+														</template>
+													</div>
+													<button type="button" class="array-add-btn" @click="addArrayRow(entry.item)">+ Eintrag hinzufügen</button>
+												</div>
+											</template>
+
+											<!-- Select-Feld (Tom Select): vordefinierte und/oder dynamische Werte, optional frei erweiterbar -->
+											<template x-if="!entry.isGroup && entry.item.type === 'select'">
+												<label class="field">
+													<span class="field__label" x-text="entry.item.label || entry.item.name"></span>
+													<select
+														x-init="
+															let ts = new TomSelect($el, {
+																create: entry.item.allowCustom || false,
+																persist: false,
+																options: selectOptionsFor(entry.item),
+																items: values[entry.item.name] ? [values[entry.item.name]] : [],
+																onChange: (v) => { values[entry.item.name] = v; },
+															});
+															$watch(() => values[entry.item.name], (v) => { if (ts.getValue() !== (v || '')) ts.setValue(v || '', true); });
+															$watch(() => values[entry.item.name + '__options'], () => { ts.clearOptions(); selectOptionsFor(entry.item).forEach((o) => ts.addOption(o)); ts.refreshOptions(false); });
+														"
+													></select>
+												</label>
+											</template>
+
+											<!-- Datumsfeld (Flatpickr) -->
+											<template x-if="!entry.isGroup && entry.item.type === 'date'">
+												<label class="field">
+													<span class="field__label" x-text="entry.item.label || entry.item.name"></span>
+													<input
+														type="text"
+														class="field__input"
+														x-init="
+															let fp = flatpickr($el, {
+																dateFormat: 'Y-m-d',
+																allowInput: true,
+																defaultDate: values[entry.item.name] || null,
+																onChange: (dates, str) => { values[entry.item.name] = str; },
+															});
+															$watch(() => values[entry.item.name], (v) => { if ($el.value !== (v || '')) fp.setDate(v || '', false); });
+														"
+													/>
+												</label>
+											</template>
+
+											<!-- Standardfelder: text/textarea/list -->
+											<template x-if="!entry.isGroup && !['array', 'select', 'date'].includes(entry.item.type)">
+												<label class="field">
+													<span class="field__label" x-text="entry.item.label || entry.item.name"></span>
+													<textarea x-show="entry.item.type === 'textarea'" class="field__textarea" x-model="values[entry.item.name]"></textarea>
+													<input x-show="entry.item.type !== 'textarea'" type="text" class="field__input" x-model="values[entry.item.name]" />
+												</label>
+											</template>
+										</div>
+									</template>
+								</div>
+							</template>
+						</div>
+					</details>
+				</template>
+
+				<div class="mt-3 text-right">
+					<button class="button" type="submit" :disabled="!defaultsLoaded">XML herunterladen</button>
+				</div>
+			</form>
+
+			<p role="status" aria-live="polite" x-text="status" :class="statusClass"></p>
+		</main>
+	</div>
+</body>
+</html>
+
