@@ -1,0 +1,190 @@
+# Test-Konfiguration für Unit-Tests (wird in git gepusht)
+# Umfangreiche Testabdeckung aller wichtigen Features und Feldtypen
+
+blogger:
+  blogId: "test-blog-123"
+  maxResults: 25
+
+server:
+  port: 8080
+
+site:
+  title: "Test XML Export"
+  heading: "Test XML Export"
+
+assets:
+  dir: ""
+  favicon: ""
+  logo: ""
+
+form:
+  items:
+    # Gruppe 1: Basis-Feldtypen
+    - type: group
+      title: "Basisdaten"
+      items:
+        - type: text
+          name: titel
+          label: "Titel"
+          source: title
+          row: 1
+          width: 8
+        - type: date
+          name: produktionsdatum
+          label: "Produktionsdatum"
+          source: published
+          row: 1
+          width: 4
+        - type: text
+          name: drehort
+          label: "Drehort"
+          template: '{{ source "content" | default "Unknown" }}'
+          row: 2
+          width: 12
+        - type: textarea
+          name: beschreibung
+          label: "Beschreibung"
+          row: 3
+          width: 12
+
+    # Gruppe 2: Select und weitere Feldtypen
+    - type: group
+      title: "Kategorisierung"
+      items:
+        - type: select
+          name: kategorie
+          label: "Kategorie"
+          options:
+            - value: "news"
+              label: "Nachrichten"
+            - value: "sport"
+              label: "Sport"
+            - value: "kultur"
+              label: "Kultur"
+          allowCustom: true
+          row: 1
+          width: 6
+        - type: text
+          name: tags
+          label: "Tags (kommagetrennt)"
+          row: 1
+          width: 6
+        - type: text
+          name: priority
+          label: "Priorität"
+          template: "normal"
+          row: 2
+          width: 6
+
+    # Gruppe 3: Array-Feld (wiederholbare Zeilen)
+    - type: group
+      title: "Kontaktinformationen"
+      items:
+        - type: array
+          name: kontakte
+          label: "Kontakte"
+          row: 1
+          fields:
+            - type: text
+              name: kontakt_name
+              label: "Name"
+            - type: text
+              name: kontakt_email
+              label: "Email"
+            - type: text
+              name: kontakt_rolle
+              label: "Rolle"
+
+    # Gruppe 4: Versteckte und komplexe Felder
+    - type: group
+      title: "Redaktion"
+      collapsible: true
+      collapsed: true
+      items:
+        - type: text
+          name: editor
+          label: "Editor"
+          hidden: false
+          row: 1
+          width: 6
+        - type: text
+          name: status
+          label: "Status"
+          template: "draft"
+          row: 1
+          width: 6
+        - type: array
+          name: anhänge
+          label: "Anhänge"
+          row: 2
+          fields:
+            - type: text
+              name: anhang_typ
+              label: "Typ"
+            - type: text
+              name: anhang_url
+              label: "URL"
+
+xml:
+  root: "test:Document"
+  filename: '{{ .titel | default "export" }}'
+  namespaces:
+    - name: test
+      value: "http://example.com/test"
+    - name: xsi
+      value: "http://www.w3.org/2001/XMLSchema-instance"
+  attributes:
+    - name: "xsi:schemaLocation"
+      value: "http://example.com/test schema.xsd"
+    - name: version
+      value: "1.0"
+  fields:
+    # Einfache form-to-xml Mappings
+    - xmlPath: "test:metadata/test:title"
+      formField: titel
+    - xmlPath: "test:metadata/test:date"
+      formField: produktionsdatum
+    - xmlPath: "test:metadata/test:category"
+      formField: kategorie
+    - xmlPath: "test:metadata/test:priority"
+      formField: priority
+    
+    # Template-basierte Felder
+    - xmlPath: "test:content/test:description"
+      formField: beschreibung
+    - xmlPath: "test:content/test:location"
+      formField: drehort
+    
+    # Statische Felder
+    - xmlPath: "test:info/test:publisher"
+      template: "Test Publisher GmbH"
+    - xmlPath: "test:info/test:copyright"
+      template: "© 2025 Test Publisher"
+    
+    # Array-Feld mit Wiederholung
+    - xmlPath: "test:contacts/test:contact"
+      type: array
+      formField: kontakte
+      fields:
+        - xmlPath: "test:name"
+          formField: kontakt_name
+        - xmlPath: "test:email"
+          formField: kontakt_email
+        - xmlPath: "test:role"
+          formField: kontakt_rolle
+    
+    # Weiteres Array-Feld
+    - xmlPath: "test:attachments/test:file"
+      type: array
+      formField: anhänge
+      fields:
+        - xmlPath: "test:type"
+          formField: anhang_typ
+        - xmlPath: "test:url"
+          formField: anhang_url
+    
+    # Metadaten
+    - xmlPath: "test:metadata/test:editor"
+      formField: editor
+    - xmlPath: "test:metadata/test:status"
+      formField: status
