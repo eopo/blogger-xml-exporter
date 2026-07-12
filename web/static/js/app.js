@@ -38,7 +38,7 @@ function formatDate(iso) {
 	if (Number.isNaN(date.getTime())) {
 		return "";
 	}
-	return date.toLocaleString("en-US", {
+	return date.toLocaleString("de-DE", {
 		day: "2-digit",
 		month: "2-digit",
 		year: "numeric",
