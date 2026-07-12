@@ -36,6 +36,7 @@
             <FormGroup
               :group="(field as any)"
               :form-values="formValues"
+              :is-loading="isLoading"
             />
           </div>
 
@@ -43,6 +44,7 @@
             <FormArray
               :item="field"
               :model-value="(formValues[field.name] as unknown as any[]) || []"
+              :is-loading="isLoading"
               @update:model-value="updateFormValue(field.name, $event)"
             />
           </div>
@@ -51,6 +53,7 @@
             <FormDate
               :item="field"
               :model-value="(formValues[field.name] || '') as string"
+              :is-loading="isLoading"
               @update:model-value="updateFormValue(field.name, $event)"
             />
           </div>
@@ -59,6 +62,7 @@
             <FormCombobox
               :item="field"
               :model-value="(formValues[field.name] || '') as string"
+              :is-loading="isLoading"
               @update:model-value="updateFormValue(field.name, $event)"
             />
           </div>
@@ -67,6 +71,7 @@
             <FormCombobox
               :item="field"
               :model-value="(formValues[field.name] || '') as string"
+              :is-loading="isLoading"
               @update:model-value="updateFormValue(field.name, $event)"
             />
           </div>
@@ -75,15 +80,16 @@
             <FormField
               :item="{ ...field, type: 'textarea' }"
               :model-value="(formValues[field.name] || '') as string"
+              :is-loading="isLoading"
               @update:model-value="updateFormValue(field.name, $event)"
             />
           </div>
 
           <div v-else>
-            <!-- text, number, email, etc -->
             <FormField
               :item="field"
               :model-value="(formValues[field.name] || '') as string | number"
+              :is-loading="isLoading"
               @update:model-value="updateFormValue(field.name, $event)"
             />
           </div>
@@ -105,6 +111,7 @@ import FormGroup from './FormGroup.vue'
 interface Props {
   group: FormGroupType
   formValues: FormValues
+  isLoading?: boolean
 }
 
 const props = defineProps<Props>()

@@ -23,7 +23,7 @@
         :value="modelValue"
         :placeholder="item.placeholder || 'Datum auswählen...'"
         :required="item.required"
-        class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 pl-10 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 cursor-pointer"
+        :class="['w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 pl-10 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 cursor-pointer', { 'skeleton-pulse': isLoading }]"
       >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -58,6 +58,7 @@ import type { FormItem } from '@/types'
 interface Props {
   item: FormItem
   modelValue: string
+  isLoading?: boolean
 }
 
 const props = defineProps<Props>()

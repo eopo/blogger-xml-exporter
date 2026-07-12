@@ -16,11 +16,11 @@
         <RenderGroupContent
           :group="group"
           :form-values="formValues"
+          :is-loading="isLoading"
         />
       </div>
     </details>
 
-    <!-- Non-collapsible: just render content -->
     <div
       v-else
       class="border-b border-slate-200 py-6 last:border-b-0"
@@ -35,6 +35,7 @@
         <RenderGroupContent
           :group="group"
           :form-values="formValues"
+          :is-loading="isLoading"
         />
       </div>
     </div>
@@ -48,6 +49,7 @@ import RenderGroupContent from './RenderGroupContent.vue'
 interface Props {
   group: FormGroupType
   formValues: FormValues
+  isLoading?: boolean
 }
 
 defineProps<Props>()

@@ -20,7 +20,7 @@
       :required="item.required"
       :minlength="item.minLength"
       :maxlength="item.maxLength"
-      class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm resize-none min-h-32 transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
+      :class="['w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm resize-none min-h-32 transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10', { 'skeleton-pulse': isLoading }]"
       @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
 
@@ -34,7 +34,7 @@
       :minlength="item.minLength"
       :maxlength="item.maxLength"
       :pattern="item.pattern"
-      class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
+      :class="['w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10', { 'skeleton-pulse': isLoading }]"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     >
 
@@ -54,6 +54,7 @@ import type { FormItem } from '@/types'
 interface Props {
   item: FormItem
   modelValue: string | number
+  isLoading?: boolean
 }
 
 const props = defineProps<Props>()

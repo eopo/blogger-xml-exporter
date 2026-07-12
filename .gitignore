@@ -1,5 +1,6 @@
 # Build artifacts and binaries
 bin/
+.bin/
 tmp/
 *.exe
 *.o
@@ -9,14 +10,14 @@ tmp/
 # Node.js dependencies and build output
 node_modules/
 frontend/node_modules/
-frontend/dist/
 frontend/.eslintcache
 
-# Generated assets (built by Docker or make)
+# Generated assets (built by make/Docker)
 web/static/
 
-# Local tools (downloaded by scripts, not committed)
-tools/
+# Root-level go.mod/go.sum (created by go mod download, not needed for monorepo)
+go.mod
+go.sum
 
 # IDE
 .vscode/

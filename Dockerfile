@@ -1,52 +1,41 @@
 # syntax=docker/dockerfile:1
 
-# --- Frontend build stage (Node.js + Vite) ----------------------------------
+# Frontend build stage
 FROM node:22-alpine AS frontend-builder
 
 WORKDIR /src
 
-# Copy frontend dependencies
 COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/
 
-# Install frontend dependencies
 RUN npm ci && cd frontend && npm ci
 
-# Copy frontend source code
 COPY frontend ./frontend
 COPY web ./web
 
-# Build frontend (Vite → web/static/)
 RUN npm run build
 
-# --- Go build stage (static binary) -----------------------------------------
+# Go build stage
 FROM golang:1.24-alpine AS go-builder
 
-# Install current go toolchain to support newer go.mod
 RUN go env -w GOTOOLCHAIN=auto
 ENV GOTOOLCHAIN=auto
-
-# Static binary for distroless/static runtime (no libc needed)
 ENV CGO_ENABLED=0
 
 WORKDIR /src
 
-# Copy backend files
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
 COPY backend ./
 RUN go build -o /out/blogger-xml-exporter .
 
-# --- Runtime stage (distroless/static) ------------------------------------
+# Runtime stage
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:b7bb25d9f7c31d2bdd1982feb4dafcaf137703c7075dbe2febb41c24212b946f
 
 WORKDIR /app
 
-# Copy Go binary
 COPY --from=go-builder /out/blogger-xml-exporter ./blogger-xml-exporter
-
-# Copy built frontend assets
 COPY --from=frontend-builder /src/web/static ./web/static
 
 # config.yaml must be mounted at runtime

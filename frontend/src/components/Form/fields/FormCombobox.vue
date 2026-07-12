@@ -23,8 +23,8 @@
           v-model="searchText"
           type="text"
           :placeholder="item?.placeholder || placeholder"
-          class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
-          @focus="isOpen = true"
+          :class="['w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10', { 'skeleton-pulse': isLoading }]"
+          @focus="onFocus"
           @blur="onBlur"
           @input="filterOptions"
         >
@@ -95,7 +95,6 @@ interface ExtendedOption extends SelectOption {
 }
 
 interface Props {
-  // Support both direct props (for App.vue) and item prop (for recursive rendering)
   item?: FormItem
   name?: string
   label?: string
@@ -104,6 +103,8 @@ interface Props {
   placeholder?: string
   help?: string
   required?: boolean
+  isLoading?: boolean
+  clearOnFocus?: boolean
 }
 
 const props = defineProps<Props>()
@@ -141,6 +142,14 @@ function selectOption(opt: ExtendedOption) {
   searchText.value = opt.label
   isOpen.value = false
   emit('update:modelValue', opt.value)
+}
+
+function onFocus() {
+  isOpen.value = true
+  if (props.clearOnFocus && props.modelValue) {
+    searchText.value = ''
+    emit('update:modelValue', '')
+  }
 }
 
 function filterOptions() {

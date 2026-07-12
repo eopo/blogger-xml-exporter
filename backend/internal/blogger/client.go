@@ -123,7 +123,12 @@ func (c *Client) getJSON(ctx context.Context, endpoint string, out interface{}) 
 	if err != nil {
 		return fmt.Errorf("blogger API request failed: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			// Log close errors if needed, but don't fail the request
+			_ = err
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		// Include the (bounded) response body so container logs reveal the actual

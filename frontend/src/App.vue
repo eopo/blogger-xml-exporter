@@ -35,6 +35,10 @@
       <form
         v-else-if="api.hasSchema.value"
         class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm"
+        :style="{
+          '--skeleton-base': 'rgb(255, 255, 255)',
+          '--skeleton-highlight': hexToRgb(themeColors.primaryColor, 0.08)
+        } as Record<string, string>"
         @submit.prevent="onSubmit"
       >
         <div
@@ -55,6 +59,7 @@
               help: 'Wählen Sie einen Blog-Post aus'
             }"
             :model-value="selectedPostId"
+            :clear-on-focus="true"
             @update:model-value="onSelectPost"
           />
         </div>
@@ -82,6 +87,7 @@
               v-if="item.type === 'group'"
               :group="(item as any)"
               :form-values="formValues"
+              :is-loading="isFillingForm"
             />
             <!-- Render other fields directly -->
             <FormField
@@ -156,6 +162,7 @@ const api = useApi()
 const selectedPostId = ref('')
 const selectedPost = ref<Post | null>(null)
 const isSubmitting = ref(false)
+const isFillingForm = ref(false)
 
 // Schema and form setup
 const schema = computed(() => api.schema.value)
@@ -201,12 +208,18 @@ async function onSelectPost(postId: string) {
   selectedPostId.value = postId
   if (!postId) {
     form.clearPost()
+    isFillingForm.value = false
     return
   }
-  const postData = await api.fetchPost(postId)
-  if (postData && postData.post) {
-    selectedPost.value = postData.post
-    form.setSelectedPost(postData)
+  isFillingForm.value = true
+  try {
+    const postData = await api.fetchPost(postId)
+    if (postData && postData.post) {
+      selectedPost.value = postData.post
+      form.setSelectedPost(postData)
+    }
+  } finally {
+    isFillingForm.value = false
   }
 }
 
@@ -244,6 +257,22 @@ function resetForm() {
   form.resetForm()
   selectedPostId.value = ''
   selectedPost.value = null
+}
+
+// Convert hex color to rgb or rgba string
+// Examples: "#2563eb" → "rgb(37, 99, 235)" or with alpha → "rgba(37, 99, 235, 0.08)"
+function hexToRgb(hex: string, alpha?: number): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return hex
+  
+  const r = parseInt(result[1], 16)
+  const g = parseInt(result[2], 16)
+  const b = parseInt(result[3], 16)
+  
+  if (alpha !== undefined && alpha < 1) {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return `rgb(${r}, ${g}, ${b})`
 }
 </script>
 

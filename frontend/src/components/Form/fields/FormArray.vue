@@ -41,19 +41,18 @@
                   type="text"
                   :value="val[field.name] || ''"
                   :placeholder="field.placeholder || 'Wert...'"
-                  class="w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm"
+                  :class="['w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm', { 'skeleton-pulse': isLoading }]"
                   @input="updateItemObject(idx, field.name, ($event.target as HTMLInputElement).value)"
                 >
               </div>
             </div>
             
-            <!-- Primitive Array Mode (Render single string per entry) -->
             <div v-else>
               <input
                 type="text"
                 :value="val"
                 placeholder="Wert..."
-                class="w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm"
+                :class="['w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm', { 'skeleton-pulse': isLoading }]"
                 @input="updateItemPrimitive(idx, ($event.target as HTMLInputElement).value)"
               >
             </div>
@@ -94,6 +93,7 @@ import type { FormItem } from '@/types'
 interface Props {
   item: FormItem
   modelValue: Record<string, unknown>[]
+  isLoading?: boolean
 }
 
 const props = defineProps<Props>()
