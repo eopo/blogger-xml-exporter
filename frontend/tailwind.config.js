@@ -1,19 +1,11 @@
 import forms from '@tailwindcss/forms'
 
+/**
+ * Tailwind CSS v4 configuration
+ * - Content scanning: Automatic via PostCSS (@import "tailwindcss")
+ * - Theme customization: In tailwind.src.css via @theme
+ * - Only plugins configured here
+ */
 export default {
-  content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx,vue}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        primary: '#1e293b', // slate-900
-      },
-    },
-  },
   plugins: [forms],
-  corePlugins: {
-    preflight: true,
-  },
 }
