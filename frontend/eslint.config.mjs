@@ -1,88 +1,38 @@
-import js from '@eslint/js'
-import ts from 'typescript-eslint'
+import eslint from '@eslint/js'
+import eslintConfigPrettier from 'eslint-config-prettier'
 import vue from 'eslint-plugin-vue'
-import vueParser from 'vue-eslint-parser'
+import globals from 'globals'
+import ts from 'typescript-eslint'
 
-export default [
+export default ts.config(
   {
     ignores: ['dist', 'node_modules', '**/*.config.*', 'coverage'],
   },
-
-  // 1. Base JavaScript rules
-  js.configs.recommended,
-
-  // 2. TypeScript rules (recommended, not strict - allows flexibility)
-  ...ts.configs.recommended,
-
-  // 3. Vue 3 recommended best practices
-  ...vue.configs['flat/recommended'],
-
-  // 4. Vue files: combine Vue + TypeScript parsing
   {
-    files: ['**/*.vue'],
+    extends: [
+      eslint.configs.recommended,
+      ...ts.configs.recommended,
+      ...vue.configs['flat/recommended'],
+    ],
+    files: ['**/*.{ts,vue}'],
     languageOptions: {
-      parser: vueParser,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: globals.browser,
       parserOptions: {
         parser: ts.parser,
-        sourceType: 'module',
-        ecmaVersion: 'latest',
-      },
-      globals: {
-        // Vue 3 Composition API auto-imports
-        defineProps: 'readonly',
-        defineEmits: 'readonly',
-        defineExpose: 'readonly',
-        withDefaults: 'readonly',
-        defineModel: 'readonly',
-        // Browser APIs
-        document: 'readonly',
-        window: 'readonly',
-        navigator: 'readonly',
-        HTMLInputElement: 'readonly',
-        HTMLTextAreaElement: 'readonly',
-        Blob: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
-        fetch: 'readonly',
-        console: 'readonly',
-        setTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearTimeout: 'readonly',
-        clearInterval: 'readonly',
+        // Vue 3 removed filters; disabling prevents false positives with TS union types
+        vueFeatures: { filter: false },
       },
     },
     rules: {
-      // Development flexibility - warn on implicit any
+      // Implicit any reduces type safety; warn to allow gradual tightening
       '@typescript-eslint/no-explicit-any': 'warn',
-      
-      // Vue 3 template variables are tracked in template, not visible to ESLint
-      // This causes false positives for reactive refs/computed values used in templates
-      'no-useless-assignment': 'off',
-      
-      // Vue pipes (|) in templates are TypeScript union types in script, not Vue filters
-      // This prevents false positives when using type unions in Vue components
-      'vue/no-deprecated-filter': 'off',
-      
-      // Vue 3 allows reactive mutations in setup - template refs handle reactivity
-      'vue/no-mutating-props': 'warn',
-    },
-  },
 
-  // 5. TypeScript files: strict type checking
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      globals: {
-        console: 'readonly',
-        document: 'readonly',
-        window: 'readonly',
-        Blob: 'readonly',
-        URL: 'readonly',
-        setTimeout: 'readonly',
-      },
-    },
-    rules: {
-      // Catch unused variables (except those starting with _)
+      // Prop mutations in form components are intentional (shared reactive form state)
+      'vue/no-mutating-props': 'error',
+
+      // Unused variables except those prefixed with _
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -91,15 +41,8 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
-
-  // 6. Environment-based rules
-  {
-    rules: {
-      'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-      'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    },
-  },
-]
+  // Disable all ESLint formatting rules that conflict with Prettier (must be last)
+  eslintConfigPrettier,
+)

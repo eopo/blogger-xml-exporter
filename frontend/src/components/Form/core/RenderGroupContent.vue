@@ -152,10 +152,9 @@ function gridTemplate(row: FormItem[]): string {
 
 // Update form value (v-model binding)
 // Note: Vue 3 reactive refs handle mutations correctly in template context
-// eslint-disable vue/no-mutating-props
-function updateFormValue(name: string, value: string | number | Record<string, unknown>): void {
-  // eslint-disable-next-line vue/no-mutating-props
-  props.formValues[name] = value
+function updateFormValue(name: string, value: string | number | (string | Record<string, unknown>)[]): void {
+  // Cast needed: FormValues index type can't express all runtime-valid array shapes
+  ; (props.formValues as Record<string, unknown>)[name] = value
 }
 
 // Apply preset

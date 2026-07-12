@@ -59,7 +59,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string | number]
 }>()
 

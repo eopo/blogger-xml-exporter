@@ -1,0 +1,65 @@
+{
+  // =============================================
+  // Go (backend/)
+  // =============================================
+  "go.lintOnSave": "package",
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--timeout=5m"],
+  "go.useCodeSnippetsOnFunctionCallCompletion": true,
+  "go.formatTool": "goimports",
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.defaultFormatter": "golang.go"
+  },
+
+  // =============================================
+  // Vue 3 + TypeScript (Volar)
+  // =============================================
+  // Volar soll die Projekt-TypeScript-Version nutzen (frontend/node_modules)
+  "js/ts.tsdk.path": "frontend/node_modules/typescript/lib",
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // =============================================
+  // ESLint
+  // =============================================
+  "eslint.workingDirectories": [{ "directory": "frontend", "changeProcessCWD": true }],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // =============================================
+  // Tailwind CSS
+  // =============================================
+  "tailwindCSS.includeLanguages": { "vue": "html" },
+  // Tailwind v4 nutzt @import statt @tailwind – unbekannte At-Rules ignorieren
+  "css.lint.unknownAtRules": "ignore",
+
+  // =============================================
+  // Weitere Formate
+  // =============================================
+  "[json]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  }
+}

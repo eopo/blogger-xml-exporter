@@ -1,0 +1,23 @@
+{
+  "recommendations": [
+    // Go backend
+    "golang.go",
+
+    // Vue 3 + TypeScript (Volar = offizielle Vue 3 Sprachunterstützung)
+    "Vue.volar",
+
+    // Frontend tooling
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+
+    // GitHub Actions workflow syntax + validation
+    "GitHub.vscode-github-actions",
+
+    // Allgemein
+    "ms-vscode.makefile-tools",
+    "redhat.vscode-yaml",
+    "ms-docker.docker",
+    "eamodio.gitlens"
+  ]
+}

@@ -31,7 +31,11 @@ go.mod
 go.sum
 
 # IDE
-.vscode/
+# VS Code - commit extensions.json, settings.json, tasks.json
+# but ignore personal/generated files
+.vscode/*.code-workspace
+.vscode/launch.json
+.vscode/.history
 .idea/
 *.swp
 *.swo

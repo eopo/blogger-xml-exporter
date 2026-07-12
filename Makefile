@@ -62,8 +62,9 @@ setup: $(AIR) $(GOLANGCI_LINT) ## Install npm + dev tools
 lint-backend: $(GOLANGCI_LINT) ## Lint backend Go code
 	@cd backend && $(GOLANGCI_LINT) run ./...
 
-lint-frontend: ## Lint frontend (Vue/TypeScript)
+lint-frontend: ## Lint frontend (Vue/TypeScript) and type-check
 	@cd frontend && npm run lint
+	@cd frontend && npm run type-check
 
 lint: lint-frontend lint-backend ## Lint all (frontend + backend)
 

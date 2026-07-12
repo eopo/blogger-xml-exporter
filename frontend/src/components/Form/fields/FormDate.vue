@@ -78,30 +78,30 @@ onMounted(() => {
       dateFormat: props.item.includeTime ? 'Y-m-d\\TH:i:S' : 'Y-m-d',
       altInput: true,
       altFormat: props.item.includeTime ? 'd.m.Y H:i' : 'd.m.Y',
-      defaultDate: props.modelValue || null,
+      defaultDate: props.modelValue || undefined,
       onChange: (selectedDates) => {
         // Send format: 2026-07-12T15:00:00+02:00
         if (selectedDates.length > 0) {
-           const d = selectedDates[0]
-           // ISO String output but respecting local time offset
-           const offset = d.getTimezoneOffset()
-           const pad = (n: number) => n < 10 ? '0' + n : n
-           const sign = offset > 0 ? '-' : '+'
-           const absOffset = Math.abs(offset)
-           const hoursMenu = pad(Math.floor(absOffset / 60))
-           const minsMenu = pad(absOffset % 60)
-           
-           const y = d.getFullYear()
-           const m = pad(d.getMonth() + 1)
-           const dd = pad(d.getDate())
-           const h = pad(d.getHours())
-           const i = pad(d.getMinutes())
-           const s = pad(d.getSeconds())
+          const d = selectedDates[0]
+          // ISO String output but respecting local time offset
+          const offset = d.getTimezoneOffset()
+          const pad = (n: number) => n < 10 ? '0' + n : n
+          const sign = offset > 0 ? '-' : '+'
+          const absOffset = Math.abs(offset)
+          const hoursMenu = pad(Math.floor(absOffset / 60))
+          const minsMenu = pad(absOffset % 60)
 
-           const formatted = `${y}-${m}-${dd}T${h}:${i}:${s}${sign}${hoursMenu}:${minsMenu}`
-           emit('update:modelValue', formatted)
+          const y = d.getFullYear()
+          const m = pad(d.getMonth() + 1)
+          const dd = pad(d.getDate())
+          const h = pad(d.getHours())
+          const i = pad(d.getMinutes())
+          const s = pad(d.getSeconds())
+
+          const formatted = `${y}-${m}-${dd}T${h}:${i}:${s}${sign}${hoursMenu}:${minsMenu}`
+          emit('update:modelValue', formatted)
         } else {
-           emit('update:modelValue', '')
+          emit('update:modelValue', '')
         }
       }
     })
@@ -128,9 +128,11 @@ onBeforeUnmount(() => {
   width: auto !important;
   max-width: 100%;
 }
+
 .flatpickr-days {
   width: auto !important;
 }
+
 .dayContainer {
   width: auto !important;
   min-width: auto !important;

@@ -1,0 +1,97 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // =============================================
+    // Development
+    // =============================================
+    {
+      "label": "Dev: Start all (Backend + Frontend)",
+      "type": "shell",
+      "command": "make dev",
+      "group": "build",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+
+    // =============================================
+    // Build
+    // =============================================
+    {
+      "label": "Build: All (Frontend + Go binary)",
+      "type": "shell",
+      "command": "make build",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Build: Frontend only",
+      "type": "shell",
+      "command": "cd frontend && npm run build",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+
+    // =============================================
+    // Lint & Type-check
+    // =============================================
+    {
+      "label": "Lint: All (ESLint + type-check + golangci-lint)",
+      "type": "shell",
+      "command": "make lint",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": ["$tsc", "$eslint-stylish"]
+    },
+    {
+      "label": "Lint: Frontend (ESLint + type-check)",
+      "type": "shell",
+      "command": "make lint-frontend",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": ["$tsc", "$eslint-stylish"]
+    },
+    {
+      "label": "Lint: Backend (golangci-lint)",
+      "type": "shell",
+      "command": "make lint-backend",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": ["$go"]
+    },
+
+    // =============================================
+    // Tests
+    // =============================================
+    {
+      "label": "Test: Backend (go test -race)",
+      "type": "shell",
+      "command": "make test-backend",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Test: Frontend (Vitest)",
+      "type": "shell",
+      "command": "cd frontend && npm run test -- --run",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Frontend (Vitest – watch)",
+      "type": "shell",
+      "command": "cd frontend && npm test",
+      "group": "test",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "new" },
+      "problemMatcher": []
+    }
+  ]
+}

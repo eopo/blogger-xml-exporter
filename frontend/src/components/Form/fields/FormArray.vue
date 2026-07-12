@@ -36,32 +36,33 @@
                 <label
                   v-if="field.label"
                   class="block text-xs font-semibold text-slate-600 mb-1 tracking-wide uppercase"
-                >{{ field.label }}</label>
+                >{{ field.label
+                }}</label>
                 <input
                   type="text"
-                  :value="val[field.name] || ''"
+                  :value="(val as Record<string, unknown>)[field.name] || ''"
                   :placeholder="field.placeholder || 'Wert...'"
                   :class="['w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm', { 'skeleton-pulse': isLoading }]"
                   @input="updateItemObject(idx, field.name, ($event.target as HTMLInputElement).value)"
                 >
               </div>
             </div>
-            
+
             <div v-else>
               <input
                 type="text"
-                :value="val"
+                :value="val as string"
                 placeholder="Wert..."
                 :class="['w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm', { 'skeleton-pulse': isLoading }]"
                 @input="updateItemPrimitive(idx, ($event.target as HTMLInputElement).value)"
               >
             </div>
           </div>
-          
+
           <button
             type="button"
             class="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded text-sm font-medium h-fit mt-auto"
-            :class="{'mt-5': isObjectMode()}"
+            :class="{ 'mt-5': isObjectMode() }"
             @click="removeItem(idx)"
           >
             Löschen
@@ -92,14 +93,14 @@ import type { FormItem } from '@/types'
 
 interface Props {
   item: FormItem
-  modelValue: Record<string, unknown>[]
+  modelValue: (string | Record<string, unknown>)[]
   isLoading?: boolean
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: Record<string, unknown>[]]
+  'update:modelValue': [value: (string | Record<string, unknown>)[]]
 }>()
 
 const isObjectMode = () => props.item.fields && props.item.fields.length > 0
@@ -127,7 +128,7 @@ function updateItemPrimitive(idx: number, value: string) {
 function updateItemObject(idx: number, fieldName: string, value: string) {
   const updated = [...(props.modelValue || [])]
   if (!updated[idx]) updated[idx] = {}
-  updated[idx] = { ...updated[idx], [fieldName]: value }
+  updated[idx] = { ...(updated[idx] as Record<string, unknown>), [fieldName]: value }
   emit('update:modelValue', updated)
 }
 </script>
