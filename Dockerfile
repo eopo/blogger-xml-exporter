@@ -20,7 +20,7 @@ COPY web ./web
 RUN cd frontend && npm run build
 
 # Go build stage
-FROM golang:1.26-alpine AS go-builder
+FROM golang:1.26.5-alpine AS go-builder
 
 ARG VERSION
 ARG COMMIT_SHA

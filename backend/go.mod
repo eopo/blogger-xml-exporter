@@ -1,6 +1,6 @@
 module github.com/eopo/blogger-xml-exporter
 
-go 1.26
+go 1.26.5
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
