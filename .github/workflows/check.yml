@@ -1,4 +1,4 @@
-name: Check (Lint & Test)
+ame: Check (Lint & Test)
 
 on:
   push:
@@ -66,14 +66,13 @@ jobs:
           restore-keys: npm-${{ runner.os }}-22-
 
       - name: Install dependencies
-        if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: npm ci --prefix frontend
+        run: npm ci
 
       - name: Run ESLint
-        run: npm run lint --prefix frontend
+        run: npm run lint -w frontend
 
       - name: Check TypeScript types
-        run: npm run type-check --prefix frontend
+        run: npm run type-check -w frontend
 
   # ============================================================================
   # TESTING JOBS (depend on lint jobs)
@@ -132,8 +131,7 @@ jobs:
           restore-keys: npm-${{ runner.os }}-22-
 
       - name: Install dependencies
-        if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: npm ci --prefix frontend
+        run: npm ci
 
       - name: Cache Vite build
         uses: actions/cache@v4
@@ -143,7 +141,7 @@ jobs:
           restore-keys: vite-build-${{ runner.os }}-
 
       - name: Build production bundle
-        run: npm run build --prefix frontend
+        run: npm run build -w frontend
 
       - name: Verify build artifacts exist
         run: |

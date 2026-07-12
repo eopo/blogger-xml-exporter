@@ -1,0 +1,46 @@
+name: files-changed
+
+on:
+  workflow_call:
+    outputs:
+      backend:
+        description: "True if backend files changed"
+        value: ${{ jobs.detect.outputs.backend }}
+      frontend:
+        description: "True if frontend files changed"
+        value: ${{ jobs.detect.outputs.frontend }}
+      docker:
+        description: "True if Docker-related files changed"
+        value: ${{ jobs.detect.outputs.docker }}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      docker: ${{ steps.changes.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+              - ".github/workflows/**"
+            frontend:
+              - "frontend/**"
+              - ".github/workflows/**"
+            docker:
+              - "Dockerfile"
+              - "backend/**"
+              - "frontend/**"
+              - ".github/workflows/**"

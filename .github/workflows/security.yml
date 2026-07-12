@@ -46,14 +46,14 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --prefix frontend
+        run: cd frontend && npm ci
 
       - name: Run npm audit
-        run: npm audit --prefix frontend --audit-level=moderate
+        run: cd frontend && npm audit --audit-level=moderate
         continue-on-error: true
 
       - name: Check for high/critical vulnerabilities
-        run: npm audit --prefix frontend --json | jq -e '.metadata.vulnerabilities.critical == 0 and .metadata.vulnerabilities.high == 0' || (echo "Critical or High vulnerabilities found!" && exit 1)
+        run: cd frontend && npm audit --json | jq -e '.metadata.vulnerabilities.critical == 0 and .metadata.vulnerabilities.high == 0' || (echo "Critical or High vulnerabilities found!" && exit 1)
         continue-on-error: true
 
   # ============================================================================
@@ -110,6 +110,6 @@ jobs:
 
       - name: Check Node licenses
         run: |
-          npm ci --prefix frontend
-          npm ls --prefix frontend --depth=0 2>/dev/null | grep -E '(MIT|Apache-2.0|ISC|BSD)' || echo "License check complete"
+          npm ci
+          npm ls -w frontend --depth=0 2>/dev/null | grep -E '(MIT|Apache-2.0|ISC|BSD)' || echo "License check complete"
         continue-on-error: true

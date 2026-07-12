@@ -56,7 +56,7 @@ $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 setup: $(AIR) $(GOLANGCI_LINT) ## Install npm + dev tools
-	npm install
+	cd frontend && npm install
 	@echo "✓ Setup complete: tools installed in .bin/"
 
 lint-backend: $(GOLANGCI_LINT) ## Lint backend Go code
@@ -92,7 +92,7 @@ stop: ## Stop all dev processes (air + vite)
 	@echo "✓ All dev processes stopped"
 
 build: ## Build frontend (Vue 3 → web/static/) and Go binary with version injection
-	npm run build
+	cd frontend && npm run build
 	@mkdir -p bin
 	cd backend && go build \
 		-ldflags "-X main.Version=$(APP_VERSION) -X main.CommitSHA=$(COMMIT_SHA) -X main.BuildTime=$(BUILD_TIME)" \
@@ -110,11 +110,11 @@ build-docker: ## Build Docker image with version tags
 	@echo "✓ Docker image built: $(DOCKER_IMAGE):v$(APP_VERSION)"
 
 lint-fix: ## Fix linting issues (ESLint + gofmt)
-	npm run lint:fix
+	cd frontend && npm run lint:fix
 	@cd backend && go fmt ./...
 
 format: ## Format code (Prettier + gofmt)
-	npm run format
+	cd frontend && npm run format
 	@cd backend && go fmt ./...
 
 clean: ## Clean build artifacts and tools

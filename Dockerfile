@@ -10,18 +10,17 @@ FROM node:22-alpine AS frontend-builder
 
 WORKDIR /src
 
-COPY package.json package-lock.json ./
-COPY frontend/package.json ./frontend/
+COPY frontend/package.json frontend/package-lock.json ./frontend/
 
-RUN npm ci && cd frontend && npm ci
+RUN cd frontend && npm ci
 
 COPY frontend ./frontend
 COPY web ./web
 
-RUN npm run build
+RUN cd frontend && npm run build
 
 # Go build stage
-FROM golang:1.24-alpine AS go-builder
+FROM golang:1.26-alpine AS go-builder
 
 ARG VERSION
 ARG COMMIT_SHA
