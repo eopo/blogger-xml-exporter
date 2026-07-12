@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-100 min-h-screen;
+  }
+}
+
+@layer components {
+  /* Form Group - collapsible sections */
+  .form-group {
+    @apply bg-white mb-6 border-b border-slate-200;
+  }
+
+  .form-group--plain {
+    @apply border-none mb-0;
+  }
+
+  .form-group__summary {
+    @apply cursor-pointer select-none px-0 py-3 font-semibold text-slate-900 hover:text-primary transition-colors;
+  }
+
+  .form-group--plain .form-group__summary {
+    @apply hidden;
+  }
+
+  .form-group__title {
+    @apply select-none px-0 py-3 font-semibold text-slate-900 text-lg;
+  }
+
+  .form-group--plain .form-group__title {
+    @apply hidden;
+  }
+
+  .form-group__body {
+    @apply px-0 py-4 flex flex-col gap-6;
+  }
+
+  .form-group--plain .form-group__body {
+    @apply p-0;
+  }
+
+  /* Form Grid with CSS Grid for field widths */
+  .form-row {
+    display: grid;
+    grid-template-columns: var(--row-template, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .form-row__field {
+    @apply flex flex-col min-w-0;
+  }
+
+  @media (max-width: 767px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .form-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .form-row {
+      grid-template-columns: var(--row-template, 1fr);
+    }
+  }
+
+  /* Nested subgroups */
+  .form-subgroup {
+    @apply bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col gap-4;
+  }
+
+  .form-subgroup__title {
+    @apply block font-semibold text-sm text-slate-900 mb-0;
+  }
+
+  /* Field styling */
+  .field {
+    @apply block;
+  }
+
+  .field:has(.post-picker-row) {
+    @apply bg-transparent;
+  }
+
+  .field__label {
+    @apply block font-semibold text-sm text-slate-700 mb-2.5 uppercase tracking-wide;
+  }
+
+  .field__input,
+  .field__textarea {
+    @apply w-full px-3 py-2.5 text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded-lg transition-all;
+  }
+
+  .post-picker-row .field__input {
+    @apply border-0 px-0 py-0 bg-transparent;
+  }
+
+  .field__input:hover,
+  .field__textarea:hover {
+    @apply border-slate-300 bg-white;
+  }
+
+  .field__input:focus,
+  .field__textarea:focus {
+    @apply outline-none border-primary bg-white ring-2 ring-primary/10;
+  }
+
+  .post-picker-row .field__input:hover,
+  .post-picker-row .field__input:focus {
+    @apply bg-transparent ring-0;
+  }
+
+  .field__textarea {
+    @apply min-h-[120px] resize-y;
+  }
+
+  /* Array fields */
+  .field--array {
+    @apply border border-slate-200 rounded-lg p-4 bg-slate-50/50;
+  }
+
+  .array-rows {
+    @apply flex flex-col gap-3 mb-4;
+  }
+
+  .array-row {
+    @apply flex flex-wrap items-end gap-3 p-3 border border-slate-200 rounded-lg bg-white shadow-sm;
+  }
+
+  .array-row .field {
+    @apply flex-1 min-w-40 mb-0;
+  }
+
+  .array-row__remove,
+  .array-add-btn {
+    @apply appearance-none border border-slate-300 bg-white text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer transition-all hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100;
+  }
+
+  /* Buttons */
+  .button {
+    @apply appearance-none border-none bg-primary text-white text-sm font-semibold px-6 py-3 rounded-lg cursor-pointer transition-all hover:bg-primary-dark hover:shadow-md active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none;
+  }
+
+  .button--secondary {
+    @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100 transition-all;
+  }
+
+  .button--small {
+    @apply px-4 py-1.5 text-xs;
+  }
+
+  /* Status messages */
+  .status {
+    @apply min-h-5 mt-4 text-sm text-slate-600;
+  }
+
+  .status--error {
+    @apply text-red-700;
+  }
+
+  .status--success {
+    @apply text-emerald-700;
+  }
+
+  /* Combobox for searches */
+  .combobox {
+    @apply relative w-full;
+  }
+
+  .combobox__input {
+    @apply w-full px-3 py-2.5 text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded-lg transition-all;
+  }
+
+  .combobox__input:hover {
+    @apply border-slate-300 bg-white;
+  }
+
+  .combobox__input:focus {
+    @apply outline-none border-primary bg-white ring-2 ring-primary/10;
+  }
+
+  .combobox__list {
+    @apply absolute top-full mt-1.5 w-full bg-white border border-slate-200 rounded-lg shadow-md z-50 max-h-56 overflow-y-auto;
+  }
+
+  .combobox__item {
+    @apply px-3 py-2.5 text-slate-900 cursor-pointer transition-colors hover:bg-slate-100;
+  }
+
+  .combobox__item--active {
+    @apply bg-primary/20 text-primary-dark font-medium;
+  }
+
+  .combobox__empty {
+    @apply px-3 py-4 text-sm text-slate-500 text-center;
+  }
+}

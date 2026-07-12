@@ -1,0 +1,306 @@
+/**
+ * Tailwind CSS v4 source file. Compiles to web/static/css/style.css.
+ * Defines custom components and theme overrides for vendored widgets
+ * (Tom Select, Flatpickr) to ensure a cohesive UI design.
+ *
+ * Tailwind v4 uses CSS-based themes (no tailwind.config.js) and
+ * automatically scans class names in files relative to this one.
+ */
+@import "tailwindcss";
+
+/* FORCE TAILWIND CLASS SCANNING:
+ * List all basis-* classes here so Tailwind scanner includes them.
+ * Without this, CSS scanning in JS objects fails in v4.
+ * basis-1/12 basis-1/6 basis-1/4 basis-1/3 basis-5/12 basis-1/2
+ * basis-7/12 basis-2/3 basis-3/4 basis-5/6 basis-11/12 basis-full */
+
+@theme {
+	--color-primary: #2563eb;       /* Primary color (overridden by config) */
+	--color-primary-dark: #1e40af;  /* Dark variant (overridden by config) */
+	--color-primary-light: #3b82f6; /* Light variant (overridden by config) */
+}
+
+@layer components {
+	/* Collapsible group sections using native <details>/<summary> */
+	.form-group {
+		@apply bg-white mb-6 border-b border-slate-200;
+		overflow: visible; /* Allow dropdowns to overflow group boundaries */
+	}
+	.form-group--plain {
+		@apply border-none mb-0;
+	}
+	.form-group__summary {
+		@apply cursor-pointer select-none px-0 py-3 font-semibold text-slate-900 marker:text-primary hover:text-primary transition-colors;
+	}
+	.form-group--plain .form-group__summary {
+		@apply hidden;
+	}
+	.form-group__title {
+		@apply select-none px-0 py-3 font-semibold text-slate-900 text-lg;
+	}
+	.form-group--plain .form-group__title {
+		@apply hidden;
+	}
+	.form-group__body {
+		@apply px-0 py-4 flex flex-col gap-6;
+	}
+	.form-group--plain .form-group__body {
+		@apply p-0;
+	}
+
+	/* Rows with adjacent fields using CSS Grid.
+	Grid with CSS custom properties for responsive field width ratios (fr units).
+	- Desktop: full width control via --row-template
+	- Tablet: 2-column grid with auto-wrapping
+	- Mobile: single column, fields stack vertically
+	Responsive via media queries that redefine grid-template-columns. */
+	.form-row {
+		display: grid;
+		grid-template-columns: var(--row-template, 1fr);
+		gap: calc(var(--spacing) * 4);
+		width: 100%;
+	}
+
+	.form-row__field {
+		@apply flex flex-col min-w-0;
+	}
+
+	/* Responsive grid columns via media queries.
+	--row-template is set inline by JavaScript based on field width ratios. */
+	@media (max-width: 767px) {
+		.form-row {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (min-width: 768px) and (max-width: 1023px) {
+		.form-row {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		.form-row[data-full-width="true"] {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.form-row {
+			grid-template-columns: var(--row-template, 1fr);
+		}
+	}
+
+	/* Nested subgroup (single level, see app.js buildRows) */
+	.form-subgroup {
+		@apply bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col gap-4;
+	}
+	.form-subgroup__title {
+		@apply block font-semibold text-sm text-slate-900 mb-0;
+	}
+
+	/* Standard form fields */
+	.field {
+		@apply block;
+	}
+	.field:has(.post-picker-row) {
+		@apply bg-transparent;
+	}
+	.field__label {
+		@apply block font-semibold text-sm text-slate-700 mb-2.5 uppercase tracking-wide;
+	}
+	.field__input,
+	.field__textarea {
+		@apply w-full px-3 py-2.5 text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded-lg transition-all;
+	}
+	/* No border for select in post-picker row */
+	.post-picker-row .field__input {
+		@apply border-0 px-0 py-0 bg-transparent;
+	}
+	.field__input:hover,
+	.field__textarea:hover {
+		@apply border-slate-300 bg-white;
+	}
+	.field__input:focus,
+	.field__textarea:focus {
+		@apply outline-none border-primary bg-white ring-2 ring-primary/10;
+	}
+	.post-picker-row .field__input:hover,
+	.post-picker-row .field__input:focus {
+		@apply bg-transparent ring-0;
+	}
+	.field__textarea {
+		@apply min-h-[120px] resize-y;
+	}
+
+	/* Array fields (repeatable row groups) */
+	.field--array {
+		@apply border border-slate-200 rounded-lg p-4 bg-slate-50/50;
+	}
+	.array-rows {
+		@apply flex flex-col gap-3 mb-4;
+	}
+	.array-row {
+		@apply flex flex-wrap items-end gap-3 p-3 border border-slate-200 rounded-lg bg-white shadow-sm;
+	}
+	.array-row .field {
+		@apply flex-1 min-w-40 mb-0;
+	}
+	.array-row__remove,
+	.array-add-btn {
+		@apply appearance-none border border-slate-300 bg-white text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer transition-all hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100;
+	}
+
+	/* Post picker using Tom Select dropdown */
+	.post-picker-row {
+		@apply flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5;
+	}
+
+	/* Presets: Quick-fill templates for multiple fields in a group */
+	/* Uses same classes as post-picker-row */
+
+	/* Primary and secondary buttons */
+	.button {
+		@apply appearance-none border-none bg-primary text-white text-sm font-semibold px-6 py-3 rounded-lg cursor-pointer transition-all hover:bg-primary-dark hover:shadow-md active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none;
+	}
+	.button--secondary {
+		@apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100 transition-all;
+	}
+	.button--small {
+		@apply px-4 py-1.5 text-xs;
+	}
+
+	.status {
+		@apply min-h-5 mt-4 text-sm text-slate-600;
+	}
+	.status--error {
+		@apply text-red-700;
+	}
+	.status--success {
+		@apply text-emerald-700;
+	}
+}
+
+/* Tom Select dropdown styling with configurable primary color */
+.ts-wrapper {
+	width: 100%;
+}
+.ts-control {
+	@apply w-full px-3 py-2.5 text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded-lg transition-all cursor-pointer;
+	box-shadow: none !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	background-size: 1rem;
+	padding-right: 2.5rem;
+}
+.ts-control:hover:not(.disabled) {
+	@apply border-slate-300 bg-white;
+}
+.ts-control.focus,
+.ts-control.input-active {
+	@apply outline-none border-primary bg-white ring-2 ring-primary/10;
+}
+.ts-control.has-items {
+	@apply bg-white;
+}
+.ts-dropdown {
+	@apply rounded-lg border border-slate-200 shadow-md bg-white mt-1.5;
+	top: calc(100% + 0.375rem) !important;
+}
+.ts-dropdown .ts-option {
+	@apply px-3 py-2.5 text-slate-900 transition-colors cursor-pointer;
+	padding: 0.625rem 0.75rem;
+}
+.ts-dropdown .ts-option:hover {
+	@apply bg-slate-100 text-slate-900;
+}
+.ts-dropdown .ts-option.active {
+	@apply bg-primary/20 text-primary-dark font-medium;
+}
+.post-option {
+	@apply flex items-center justify-between gap-3 w-full;
+}
+.post-option__title {
+	@apply font-medium text-slate-900;
+}
+.post-option__date {
+	@apply text-xs text-slate-500;
+}
+.no-results {
+	@apply px-3 py-4 text-sm text-slate-500 text-center;
+}
+
+/* Tom Select: Dropdown floats above all elements including group boundaries */
+.ts-wrapper.single.input-active .ts-dropdown {
+	position: absolute;
+	z-index: 50;
+}
+.ts-dropdown {
+	z-index: 50;
+}
+
+/* Tom Select: Item tags and clear button */
+.ts-control > div {
+	@apply text-slate-900;
+}
+.ts-control .item {
+	@apply bg-primary/10 text-primary-dark border-0 rounded-md px-2.5 py-1 text-xs font-medium;
+}
+.ts-control .remove {
+	@apply text-primary-dark hover:text-primary;
+}
+.ts-clear-button {
+	@apply opacity-40 hover:opacity-100 transition-opacity;
+}
+
+/* Remove Tom Select borders and bullets */
+.ts-dropdown [data-selectable] {
+	@apply cursor-pointer;
+}
+.ts-dropdown-content {
+	@apply max-h-56 overflow-y-auto;
+}
+
+/* Flatpickr date picker styling with configurable primary color */
+	/* Uses CSS variables injected by app.js */
+.flatpickr-calendar {
+	@apply rounded-lg border border-slate-200 shadow-lg bg-white;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+.flatpickr-months {
+	padding: 1rem;
+}
+.flatpickr-month {
+	@apply text-slate-900 text-lg font-semibold;
+}
+.flatpickr-next,
+.flatpickr-prev {
+	@apply text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center;
+}
+.flatpickr-weekday {
+	@apply text-slate-600 font-semibold text-sm;
+}
+.flatpickr-days {
+	padding: 0 1rem 1rem 1rem;
+}
+.flatpickr-day {
+	@apply text-sm text-slate-700 rounded-md transition-colors;
+	width: calc(100% / 7);
+	max-width: 2.5rem;
+}
+.flatpickr-day:hover {
+	@apply bg-slate-100 text-slate-900;
+}
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+	background: var(--color-primary, #2563eb) !important;
+	border-color: var(--color-primary, #2563eb) !important;
+	color: white !important;
+	font-weight: 600;
+}
+.flatpickr-day.today {
+	border-color: var(--color-primary, #2563eb) !important;
+	color: var(--color-primary, #2563eb) !important;
+	font-weight: 600;
+}
+.flatpickr-day.inRange {
+	@apply bg-primary/10 text-primary;
+}

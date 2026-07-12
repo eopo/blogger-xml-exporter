@@ -1,0 +1,45 @@
+{
+  "name": "blogger-xml-exporter-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Vue 3 frontend for Blogger XML Exporter",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.ts,.mjs",
+    "lint:fix": "eslint . --ext .vue,.js,.ts,.mjs --fix",
+    "format": "prettier --write 'src/**/*.{vue,js,ts,json,css}'",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "flatpickr": "^4.6.13",
+    "vue": "3.5.39",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@tailwindcss/forms": "0.5.11",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/flatpickr": "^3.0.2",
+    "@vitejs/plugin-vue": "6.0.7",
+    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/ui": "4.1.10",
+    "@vue/test-utils": "2.4.11",
+    "autoprefixer": "10.5.2",
+    "eslint": "10.7.0",
+    "eslint-plugin-vue": "10.9.2",
+    "postcss": "8.5.17",
+    "prettier": "3.9.5",
+    "tailwindcss": "4.3.2",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.63.0",
+    "vite": "8.1.4",
+    "vitest": "4.1.10",
+    "vue-eslint-parser": "9.4.3",
+    "vue-tsc": "3.3.7"
+  }
+}
