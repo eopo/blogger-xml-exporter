@@ -3,12 +3,21 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
+// testConfigPath returns the absolute path to config.test.yaml.
+func testConfigPath() string {
+	_, thisFile, _, _ := runtime.Caller(0)
+	testDir := filepath.Dir(thisFile)
+	// Navigate: internal/config/config_test.go -> internal -> backend -> root
+	return filepath.Join(testDir, "..", "..", "..", "config.test.yaml")
+}
+
 // TestLoadExampleConfig verifies that config.test.yaml is valid at all times.
 func TestLoadExampleConfig(t *testing.T) {
-	cfg, err := Load("../../config.test.yaml")
+	cfg, err := Load(testConfigPath())
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
@@ -33,7 +42,7 @@ func TestLoadMissingFile(t *testing.T) {
 
 // TestLoadValidConfig tests loading valid configuration.
 func TestLoadValidConfig(t *testing.T) {
-	cfg, err := Load("../../config.test.yaml")
+	cfg, err := Load(testConfigPath())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

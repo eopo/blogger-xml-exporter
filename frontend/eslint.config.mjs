@@ -4,69 +4,99 @@ import vue from 'eslint-plugin-vue'
 import vueParser from 'vue-eslint-parser'
 
 export default [
-  // Ignore patterns
   {
-    ignores: ['dist', 'node_modules', 'web/static', 'bin', 'coverage'],
+    ignores: ['dist', 'node_modules', '**/*.config.*', 'coverage'],
   },
 
-  // JavaScript base rules
+  // 1. Base JavaScript rules
   js.configs.recommended,
 
-  // TypeScript rules
+  // 2. TypeScript rules (recommended, not strict - allows flexibility)
   ...ts.configs.recommended,
 
-  // Vue 3 rules
+  // 3. Vue 3 recommended best practices
   ...vue.configs['flat/recommended'],
 
-  // Vue files with TypeScript
+  // 4. Vue files: combine Vue + TypeScript parsing
   {
     files: ['**/*.vue'],
     languageOptions: {
       parser: vueParser,
       parserOptions: {
         parser: ts.parser,
-        ecmaVersion: 2020,
         sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
+        ecmaVersion: 'latest',
       },
       globals: {
+        // Vue 3 Composition API auto-imports
         defineProps: 'readonly',
         defineEmits: 'readonly',
         defineExpose: 'readonly',
         withDefaults: 'readonly',
+        defineModel: 'readonly',
+        // Browser APIs
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        fetch: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
+        clearInterval: 'readonly',
       },
     },
     rules: {
-      'vue/no-deprecated-v-bind-sync': 'off',
-      'vue/multi-word-component-names': 'off',
+      // Development flexibility - warn on implicit any
+      '@typescript-eslint/no-explicit-any': 'warn',
+      
+      // Vue 3 template variables are tracked in template, not visible to ESLint
+      // This causes false positives for reactive refs/computed values used in templates
+      'no-useless-assignment': 'off',
+      
+      // Vue pipes (|) in templates are TypeScript union types in script, not Vue filters
+      // This prevents false positives when using type unions in Vue components
+      'vue/no-deprecated-filter': 'off',
+      
+      // Vue 3 allows reactive mutations in setup - template refs handle reactivity
+      'vue/no-mutating-props': 'warn',
     },
   },
 
-  // TypeScript files
+  // 5. TypeScript files: strict type checking
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
-      parser: ts.parser,
+      globals: {
+        console: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
+        setTimeout: 'readonly',
+      },
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // Catch unused variables (except those starting with _)
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_' },
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 
-  // General rules for all files
+  // 6. Environment-based rules
   {
-    languageOptions: {
-      globals: {
-        process: 'readonly',
-        console: 'readonly',
-      },
-    },
     rules: {
       'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
       'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',

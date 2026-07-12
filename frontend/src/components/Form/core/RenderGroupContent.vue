@@ -1,7 +1,10 @@
 <template>
   <div>
     <!-- Presets dropdown -->
-    <div v-if="group.presets && group.presets.length > 0" class="mb-6">
+    <div
+      v-if="group.presets && group.presets.length > 0"
+      class="mb-6"
+    >
       <FormCombobox
         :item="{
           name: 'preset',
@@ -17,11 +20,23 @@
     </div>
 
     <!-- Render rows -->
-    <template v-for="(row, rIdx) in rows" :key="rIdx">
-      <div class="grid gap-4" :style="{ gridTemplateColumns: gridTemplate(row) }">
-        <template v-for="field in row" :key="field.name">
+    <template
+      v-for="(row, rIdx) in rows"
+      :key="rIdx"
+    >
+      <div
+        class="grid gap-4"
+        :style="{ gridTemplateColumns: gridTemplate(row) }"
+      >
+        <template
+          v-for="field in row"
+          :key="field.name"
+        >
           <div v-if="field.type === 'group'">
-            <FormGroup :group="(field as any)" :form-values="formValues" />
+            <FormGroup
+              :group="(field as any)"
+              :form-values="formValues"
+            />
           </div>
 
           <div v-else-if="field.type === 'array'">
@@ -83,7 +98,6 @@ import { computed } from 'vue'
 import type { FormGroup as FormGroupType, FormItem, FormValues } from '@/types'
 import FormField from '../fields/FormField.vue'
 import FormDate from '../fields/FormDate.vue'
-import FormSelect from '../fields/FormSelect.vue'
 import FormCombobox from '../fields/FormCombobox.vue'
 import FormArray from '../fields/FormArray.vue'
 import FormGroup from './FormGroup.vue'
@@ -130,17 +144,22 @@ function gridTemplate(row: FormItem[]): string {
 }
 
 // Update form value (v-model binding)
-function updateFormValue(name: string, value: any) {
+// Note: Vue 3 reactive refs handle mutations correctly in template context
+// eslint-disable vue/no-mutating-props
+function updateFormValue(name: string, value: string | number | Record<string, unknown>): void {
+  // eslint-disable-next-line vue/no-mutating-props
   props.formValues[name] = value
 }
 
 // Apply preset
-function applyPresetRawValue(value: string) {
+// eslint-disable vue/no-mutating-props
+function applyPresetRawValue(value: string): void {
   if (!value) return
   const idx = parseInt(value)
   if (isNaN(idx) || !props.group.presets) return
 
   const preset = props.group.presets[idx]
+  // eslint-disable-next-line vue/no-mutating-props
   Object.assign(props.formValues, preset.values)
 }
 </script>

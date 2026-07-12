@@ -1,32 +1,55 @@
 <template>
-  <div :style="themeStyles" class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8">
+  <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 py-8">
     <div class="max-w-4xl mx-auto px-4">
       <!-- Header -->
       <header class="mb-8">
-        <h1 class="text-4xl font-bold text-slate-900 mb-2">{{ api.schema.value?.site?.heading || 'Blogger XML Exporter' }}</h1>
-        <p class="text-slate-600">{{ api.schema.value?.site?.title ? '' : 'Export blog posts with custom XML schema' }}</p>
+        <h1 class="text-4xl font-bold text-slate-900 mb-2">
+          {{ api.schema.value?.site?.heading || 'Blogger XML Exporter' }}
+        </h1>
+        <p class="text-slate-600">
+          {{ api.schema.value?.site?.title ? '' : 'Export blog posts with custom XML schema' }}
+        </p>
       </header>
 
       <!-- Loading state -->
-      <div v-if="api.loading.value" class="bg-white rounded-lg border border-slate-200 p-6">
-        <p class="text-slate-700">Lädt Schema...</p>
+      <div
+        v-if="api.loading.value"
+        class="bg-white rounded-lg border border-slate-200 p-6"
+      >
+        <p class="text-slate-700">
+          Lädt Schema...
+        </p>
       </div>
 
       <!-- Schema Error state -->
-      <div v-else-if="api.schemaError.value" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <p class="text-red-800">Fehler beim Laden des Schemas: {{ api.schemaError.value }}</p>
+      <div
+        v-else-if="api.schemaError.value"
+        class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+      >
+        <p class="text-red-800">
+          Fehler beim Laden des Schemas: {{ api.schemaError.value }}
+        </p>
       </div>
 
       <!-- Form -->
-      <form v-else-if="api.hasSchema.value" @submit.prevent="onSubmit" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-        <div v-if="!api.postsError.value" class="mb-6 pb-6 border-b border-slate-200">
-          <h2 class="text-lg font-semibold text-slate-900 mb-4">Blog Post</h2>
+      <form
+        v-else-if="api.hasSchema.value"
+        class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm"
+        @submit.prevent="onSubmit"
+      >
+        <div
+          v-if="!api.postsError.value"
+          class="mb-6 pb-6 border-b border-slate-200"
+        >
+          <h2 class="text-lg font-semibold text-slate-900 mb-4">
+            Blog Post
+          </h2>
           <FormCombobox
             :item="{
               name: 'post',
               label: 'Post wählen',
               type: 'combobox',
-              required: schema?.items?.some(i => i.name === 'post')?.required,
+              required: schema?.items?.find(i => i.name === 'post')?.required || false,
               options: postsOptions,
               placeholder: 'Post suchen...',
               help: 'Wählen Sie einen Blog-Post aus'
@@ -36,13 +59,24 @@
           />
         </div>
         <!-- Posts Error Warning -->
-        <div v-else class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p class="text-sm text-yellow-800">⚠️ Blog-Posts konnten nicht geladen werden ({{ api.postsError.value }}). Sie können das Formular trotzdem manuell ausfüllen.</p>
+        <div
+          v-else
+          class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg"
+        >
+          <p class="text-sm text-yellow-800">
+            ⚠️ Blog-Posts konnten nicht geladen werden ({{ api.postsError.value }}). Sie können das Formular trotzdem manuell ausfüllen.
+          </p>
         </div>
 
         <!-- Form groups -->
-        <div v-if="schema && schema.items" class="space-y-0">
-          <div v-for="(item, idx) in schema.items" :key="idx">
+        <div
+          v-if="schema && schema.items"
+          class="space-y-0"
+        >
+          <div
+            v-for="(item, idx) in schema.items"
+            :key="idx"
+          >
             <!-- Render groups -->
             <FormGroup
               v-if="item.type === 'group'"
@@ -87,8 +121,8 @@
           </button>
           <button
             type="button"
-            @click="resetForm"
             class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            @click="resetForm"
           >
             Zurücksetzen
           </button>
@@ -96,8 +130,13 @@
       </form>
 
       <!-- Fallback: No condition matched -->
-      <div v-else class="bg-orange-50 border border-orange-200 rounded-lg p-6">
-        <p class="text-orange-800">⚠️ Unerwarteter Zustand: loading={{ api.loading.value }}, hasSchema={{ api.hasSchema.value }}, schemaError={{ !!api.schemaError.value }}</p>
+      <div
+        v-else
+        class="bg-orange-50 border border-orange-200 rounded-lg p-6"
+      >
+        <p class="text-orange-800">
+          ⚠️ Unerwarteter Zustand: loading={{ api.loading.value }}, hasSchema={{ api.hasSchema.value }}, schemaError={{ !!api.schemaError.value }}
+        </p>
       </div>
     </div>
   </div>
@@ -108,7 +147,6 @@ import { ref, computed, onMounted } from 'vue'
 import type { Post } from '@/types'
 import { useApi } from '@/composables/useApi'
 import { useForm } from '@/composables/useForm'
-import { formatDate } from '@/dateFormatter'
 import FormGroup from '@/components/Form/core/FormGroup.vue'
 import FormField from '@/components/Form/fields/FormField.vue'
 import FormDate from '@/components/Form/fields/FormDate.vue'
@@ -121,7 +159,8 @@ const isSubmitting = ref(false)
 
 // Schema and form setup
 const schema = computed(() => api.schema.value)
-const form = useForm(schema.value as any)
+const form = useForm(schema.value)
+ 
 const formValues = form.formValues
 
 // Theme colors from schema
@@ -140,27 +179,20 @@ const themeColors = computed(() => {
   }
 })
 
-// CSS variables for theme colors
-const themeStyles = computed(() => ({
-  '--color-primary': themeColors.value.primaryColor,
-  '--color-dark': themeColors.value.darkColor,
-  '--color-light': themeColors.value.lightColor,
-}))
-
-const postsOptions = computed(() =>
-  api.posts.value.map((post) => ({
-    value: post.id,
-    label: post.title,
-    description: post.published ? formatDate(post.published, true) : undefined,
-  }))
-)
+// Post options for combobox
+const postsOptions = computed(() => {
+  return api.posts.value?.map(post => ({
+    value: post.id || '',
+    label: post.title || 'Untitled'
+  })) || []
+})
 
 // Init on mount
 onMounted(async () => {
   await api.fetchSchema()
   await api.fetchPosts()
   if (api.schema.value) {
-    form.initializeForm(api.schema.value as any)
+    form.initializeForm(api.schema.value)
   }
 })
 

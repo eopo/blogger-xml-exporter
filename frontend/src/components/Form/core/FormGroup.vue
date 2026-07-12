@@ -6,17 +6,36 @@
       :open="!group.collapsed"
       class="border-b border-slate-200 py-6 last:border-b-0"
     >
-      <summary v-if="group.title" class="cursor-pointer font-bold text-slate-900 text-lg tracking-wide mb-6">{{ group.title }}</summary>
+      <summary
+        v-if="group.title"
+        class="cursor-pointer font-bold text-slate-900 text-lg tracking-wide mb-6"
+      >
+        {{ group.title }}
+      </summary>
       <div class="space-y-4">
-        <RenderGroupContent :group="group" :form-values="formValues" />
+        <RenderGroupContent
+          :group="group"
+          :form-values="formValues"
+        />
       </div>
     </details>
 
     <!-- Non-collapsible: just render content -->
-    <div v-else class="border-b border-slate-200 py-6 last:border-b-0">
-      <div v-if="group.title" class="font-bold text-slate-900 text-lg tracking-wide mb-6">{{ group.title }}</div>
+    <div
+      v-else
+      class="border-b border-slate-200 py-6 last:border-b-0"
+    >
+      <div
+        v-if="group.title"
+        class="font-bold text-slate-900 text-lg tracking-wide mb-6"
+      >
+        {{ group.title }}
+      </div>
       <div class="space-y-4">
-        <RenderGroupContent :group="group" :form-values="formValues" />
+        <RenderGroupContent
+          :group="group"
+          :form-values="formValues"
+        />
       </div>
     </div>
   </div>

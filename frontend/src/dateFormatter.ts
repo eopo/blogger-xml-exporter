@@ -13,7 +13,7 @@ export function formatDate(val: string | null | undefined, includeTime: boolean 
     return d.toLocaleDateString(undefined, {
       year: 'numeric', month: '2-digit', day: '2-digit'
     })
-  } catch (e) {
+  } catch {
     return val
   }
 }

@@ -1,16 +1,24 @@
 import { reactive, computed } from 'vue'
-import type { FormGroup, FormItem, FormValues, Preset, Post, PostResponse } from '@/types'
+import type { FormGroup, FormItem, FormValues, Preset, Post, PostResponse, SchemaResponse } from '@/types'
 
-export function useForm(schema: FormGroup | null) {
+// Type guard to extract items from either FormGroup or SchemaResponse
+function getSchemaItems(schema: FormGroup | SchemaResponse | null): FormItem[] {
+  if (!schema) return []
+  if ('items' in schema && Array.isArray(schema.items)) return schema.items
+  if ('fields' in schema && Array.isArray(schema.fields)) return schema.fields
+  return []
+}
+
+export function useForm(schema: FormGroup | SchemaResponse | null) {
   const formValues = reactive<FormValues>({})
   const selectedPost = reactive<Partial<Post>>({})
 
   // Initialize form values from schema
-  function initializeForm(schemaArg?: FormGroup | null) {
+  function initializeForm(schemaArg?: FormGroup | SchemaResponse | null) {
     const schemaToUse = schemaArg || schema
     if (!schemaToUse) return
     
-    const items = (schemaToUse as any).items || (schemaToUse as any).fields || []
+    const items = getSchemaItems(schemaToUse)
     forEachField(items, (field) => {
       if (field.type === 'group' || field.type === 'array') {
         if (field.type === 'array') {
@@ -65,7 +73,7 @@ export function useForm(schema: FormGroup | null) {
         const value = postData.values[key]
         // Apply value if it's defined, not null, and not empty string
         if (value !== undefined && value !== null && value !== '') {
-          formValues[key] = value as any
+          formValues[key] = value as FormValues[keyof FormValues]
         }
       })
     }
@@ -86,7 +94,7 @@ export function useForm(schema: FormGroup | null) {
   const isFormValid = computed(() => {
     // Basic validation: check required fields
     let valid = true
-    const items = (schema as any)?.items || (schema as any)?.fields || []
+    const items = getSchemaItems(schema)
     forEachField(items, (field) => {
       if (field.required && !formValues[field.name]) {
         valid = false
