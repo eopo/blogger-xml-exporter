@@ -11,9 +11,20 @@ tmp/
 node_modules/
 frontend/node_modules/
 frontend/.eslintcache
+frontend/dist/
+frontend/.vite/
 
 # Generated assets (built by make/Docker)
 web/static/
+
+# Coverage & testing
+coverage/
+*.coverage
+coverage.out
+
+# Release & versioning temp files
+CHANGELOG.md.tmp
+.version.tmp
 
 # Root-level go.mod/go.sum (created by go mod download, not needed for monorepo)
 go.mod
@@ -25,9 +36,11 @@ go.sum
 *.swp
 *.swo
 *~
+*.sublime-*
 
 # OS
 .DS_Store
+Thumbs.db
 
 # Go
 go.sum.bak

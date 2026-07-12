@@ -18,7 +18,12 @@ export PATH := $(LOCALBIN):$(PATH)
 
 # Tool versions (pinned for reproducibility)
 AIR_VERSION := v1.65.3
-GOLANGCI_LINT_VERSION := v1.64.8
+GOLANGCI_LINT_VERSION := v2.12.2
+
+# Application version (from .version file, SemVer)
+APP_VERSION := $(shell cat .version 2>/dev/null || echo "dev")
+COMMIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # Tool binaries
 AIR := $(LOCALBIN)/air
@@ -63,7 +68,7 @@ lint-frontend: ## Lint frontend (Vue/TypeScript)
 lint: lint-frontend lint-backend ## Lint all (frontend + backend)
 
 test-backend: ## Run backend tests
-	@cd backend && go test -v ./...
+	@cd backend && go test -v -race -coverprofile=coverage.out ./...
 
 test: test-backend ## Run all tests (backend only)
 
@@ -86,14 +91,23 @@ stop: ## Stop all dev processes (air + vite)
 	@pkill -f "air|vite" || echo "No processes to stop"
 	@echo "✓ All dev processes stopped"
 
-build: ## Build frontend (Vue 3 → web/static/) and Go binary
+build: ## Build frontend (Vue 3 → web/static/) and Go binary with version injection
 	npm run build
-	cd backend && go build -o ../bin/$(BIN_NAME) .
-	@echo "✓ Build complete (bin/$(BIN_NAME) + web/static/)"
+	@mkdir -p bin
+	cd backend && go build \
+		-ldflags "-X main.Version=$(APP_VERSION) -X main.CommitSHA=$(COMMIT_SHA) -X main.BuildTime=$(BUILD_TIME)" \
+		-o ../bin/$(BIN_NAME) .
+	@echo "✓ Build complete: bin/$(BIN_NAME) v$(APP_VERSION) ($(COMMIT_SHA))"
 
-build-docker: ## Build Docker image (complete multi-stage build)
-	docker build -t $(DOCKER_IMAGE) .
-	@echo "✓ Docker image built: $(DOCKER_IMAGE)"
+build-docker: ## Build Docker image with version tags
+	docker build \
+		-t $(DOCKER_IMAGE) \
+		-t $(DOCKER_IMAGE):v$(APP_VERSION) \
+		--build-arg VERSION=$(APP_VERSION) \
+		--build-arg COMMIT_SHA=$(COMMIT_SHA) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		.
+	@echo "✓ Docker image built: $(DOCKER_IMAGE):v$(APP_VERSION)"
 
 lint-fix: ## Fix linting issues (ESLint + gofmt)
 	npm run lint:fix

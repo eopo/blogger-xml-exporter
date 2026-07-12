@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump (patch|minor|major)'
+        required: false
+        default: 'auto'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # SEMANTIC VERSIONING & RELEASE (Conventional Commits)
+  # ============================================================================
+
+  release:
+    name: 🎯 Semantic Release
+    runs-on: ubuntu-latest
+    # Only on main, skip if already tagged
+    if: github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)')
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      published: ${{ steps.release.outputs.published }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set Git config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install release tools
+        run: npm install --save-dev @release-it/conventional-changelog commitlint semantic-release
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          # Parse conventional commits to determine bump
+          COMMITS=$(git log --format="%H %s" origin/main..HEAD 2>/dev/null || git log --format="%H %s" -10)
+          
+          if echo "$COMMITS" | grep -qE "^.+ (feat|fix|perf)(\(.+\))?!:"; then
+            echo "bump_type=major" >> $GITHUB_OUTPUT
+          elif echo "$COMMITS" | grep -qE "^.+ feat(\(.+\))?:"; then
+            echo "bump_type=minor" >> $GITHUB_OUTPUT
+          elif echo "$COMMITS" | grep -qE "^.+ (fix|perf)(\(.+\))?:"; then
+            echo "bump_type=patch" >> $GITHUB_OUTPUT
+          else
+            echo "bump_type=none" >> $GITHUB_OUTPUT
+          fi
+          echo "manual_bump=${{ github.event.inputs.bump }}" >> $GITHUB_OUTPUT
+
+      - name: Compute next version
+        id: version
+        run: |
+          CURRENT_VERSION=$(cat .version)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          BUMP="${{ steps.bump.outputs.manual_bump }}"
+          if [ "$BUMP" == "auto" ] || [ -z "$BUMP" ]; then
+            BUMP="${{ steps.bump.outputs.bump_type }}"
+          fi
+          
+          case "$BUMP" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch|*)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "Computed version: $CURRENT_VERSION -> $NEXT_VERSION (bump: $BUMP)"
+
+      - name: Update .version file
+        if: steps.version.outputs.next_version != ''
+        run: |
+          echo "${{ steps.version.outputs.next_version }}" > .version
+          cat .version
+
+      - name: Commit and Tag
+        if: steps.version.outputs.next_version != ''
+        run: |
+          git add .version
+          git commit -m "chore(release): v${{ steps.version.outputs.next_version }}"
+          git tag -a "v${{ steps.version.outputs.next_version }}" -m "Release v${{ steps.version.outputs.next_version }}"
+          git push origin main
+          git push origin "v${{ steps.version.outputs.next_version }}"
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.next_version != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.next_version }}
+          name: Release v${{ steps.version.outputs.next_version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload version for downstream jobs
+        if: steps.version.outputs.next_version != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-info
+          path: .version
+          retention-days: 1
+
+  # ============================================================================
+  # TRIGGER BUILD WORKFLOW with computed version
+  # ============================================================================
+
+  trigger-build:
+    name: 🚀 Trigger Build
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.published == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Trigger build workflow
+        run: |
+          gh workflow run build.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

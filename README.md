@@ -57,6 +57,10 @@ Server runs on `http://localhost:8080`.
 
 ## Configuration
 
+See [GIT_WORKFLOW.md](GIT_WORKFLOW.md) for branching strategy and contribution guidelines.
+
+See [VERSIONING.md](VERSIONING.md) for version management and release process.
+
 ### `config.yaml` Structure
 
 **blogger**: Blog ID and post fetch limit

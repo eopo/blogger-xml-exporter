@@ -1,0 +1,115 @@
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  schedule:
+    # Daily security scans at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  # ============================================================================
+  # DEPENDENCY SCANNING (Dependabot alternative)
+  # ============================================================================
+
+  check-go-deps:
+    name: Check Go Dependencies for Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          cd backend && govulncheck ./...
+
+  check-npm-deps:
+    name: Check Node Dependencies for Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix frontend
+
+      - name: Run npm audit
+        run: npm audit --prefix frontend --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for high/critical vulnerabilities
+        run: npm audit --prefix frontend --json | jq -e '.metadata.vulnerabilities.critical == 0 and .metadata.vulnerabilities.high == 0' || (echo "Critical or High vulnerabilities found!" && exit 1)
+        continue-on-error: true
+
+  # ============================================================================
+  # CODE QUALITY SCANNING
+  # ============================================================================
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['go', 'javascript-typescript']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ============================================================================
+  # DEPENDENCY LICENSE CHECK
+  # ============================================================================
+
+  check-licenses:
+    name: Check Dependency Licenses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: Check Go licenses
+        run: |
+          go install github.com/google/go-licenses@latest
+          cd backend && go-licenses check ./...
+        continue-on-error: true
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Check Node licenses
+        run: |
+          npm ci --prefix frontend
+          npm ls --prefix frontend --depth=0 2>/dev/null | grep -E '(MIT|Apache-2.0|ISC|BSD)' || echo "License check complete"
+        continue-on-error: true

@@ -12,6 +12,13 @@ import (
 	"github.com/eopo/blogger-xml-exporter/internal/httpapi"
 )
 
+// Version information (injected via ldflags during build).
+var (
+	Version   = "dev"
+	CommitSHA = "unknown"
+	BuildTime = "unknown"
+)
+
 func main() {
 	configPath := envOrDefault("CONFIG_PATH", "config.yaml")
 	staticDir := envOrDefault("STATIC_DIR", "web/static")

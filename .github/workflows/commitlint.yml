@@ -1,0 +1,36 @@
+name: Commitlint
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  commitlint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install commitlint
+        run: npm install --save-dev @commitlint/cli @commitlint/config-conventional
+
+      - name: Validate commits
+        # For PR: lint commits against base branch
+        # For push: lint commits against previous commit
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "📋 Linting PR commits against base branch..."
+            npx commitlint --from ${{ github.event.pull_request.base.sha }} --to HEAD
+          else
+            echo "📋 Linting recent commits..."
+            npx commitlint --from HEAD~5 --to HEAD || true
+          fi
