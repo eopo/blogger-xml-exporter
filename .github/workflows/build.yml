@@ -1,12 +1,10 @@
 name: Build & Release
 
 on:
-  # Trigger after check.yml succeeds
   workflow_run:
-    workflows: ["Check (Lint & Test)"]
+    workflows: ["Release"]
     types: [completed]
     branches: [main]
-  # Also allow manual trigger
   workflow_dispatch:
     inputs:
       push_image:

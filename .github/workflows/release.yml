@@ -1,7 +1,9 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Check (Lint & Test)"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -22,11 +24,10 @@ jobs:
   release:
     name: 🎯 Semantic Release
     runs-on: ubuntu-latest
-    # Only on main, skip if already tagged
-    if: github.ref == 'refs/heads/main' && !startsWith(github.event.head_commit.message, 'chore(release)')
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     outputs:
-      version: ${{ steps.release.outputs.version }}
-      published: ${{ steps.release.outputs.published }}
+      version: ${{ steps.version.outputs.next_version }}
+      published: ${{ steps.version.outputs.published }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -48,29 +49,53 @@ jobs:
       - name: Determine version bump
         id: bump
         run: |
-          # Parse conventional commits to determine bump
-          COMMITS=$(git log --format="%H %s" origin/main..HEAD 2>/dev/null || git log --format="%H %s" -10)
-          
-          if echo "$COMMITS" | grep -qE "^.+ (feat|fix|perf)(\(.+\))?!:"; then
-            echo "bump_type=major" >> $GITHUB_OUTPUT
-          elif echo "$COMMITS" | grep -qE "^.+ feat(\(.+\))?:"; then
-            echo "bump_type=minor" >> $GITHUB_OUTPUT
-          elif echo "$COMMITS" | grep -qE "^.+ (fix|perf)(\(.+\))?:"; then
-            echo "bump_type=patch" >> $GITHUB_OUTPUT
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --format="%H %s" | head -50)
           else
+            COMMITS=$(git log $LAST_TAG..HEAD --format="%H %s")
+          fi
+          
+          if [ -z "$COMMITS" ]; then
             echo "bump_type=none" >> $GITHUB_OUTPUT
+            echo "has_commits=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_commits=true" >> $GITHUB_OUTPUT
+            if echo "$COMMITS" | grep -qE "^[^ ]+ (feat|fix|perf)(\(.+\))?!:"; then
+              echo "bump_type=major" >> $GITHUB_OUTPUT
+            elif echo "$COMMITS" | grep -qE "^[^ ]+ feat(\(.+\))?:"; then
+              echo "bump_type=minor" >> $GITHUB_OUTPUT
+            elif echo "$COMMITS" | grep -qE "^[^ ]+ (fix|perf)(\(.+\))?:"; then
+              echo "bump_type=patch" >> $GITHUB_OUTPUT
+            else
+              echo "bump_type=none" >> $GITHUB_OUTPUT
+            fi
           fi
           echo "manual_bump=${{ github.event.inputs.bump }}" >> $GITHUB_OUTPUT
 
       - name: Compute next version
         id: version
         run: |
+          if [ "${{ steps.bump.outputs.has_commits }}" != "true" ]; then
+            echo "next_version=" >> $GITHUB_OUTPUT
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "No commits to release"
+            exit 0
+          fi
+          
           CURRENT_VERSION=$(cat .version)
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
           
           BUMP="${{ steps.bump.outputs.manual_bump }}"
           if [ "$BUMP" == "auto" ] || [ -z "$BUMP" ]; then
             BUMP="${{ steps.bump.outputs.bump_type }}"
+          fi
+          
+          if [ "$BUMP" == "none" ]; then
+            echo "next_version=" >> $GITHUB_OUTPUT
+            echo "published=false" >> $GITHUB_OUTPUT
+            echo "No version bump needed"
+            exit 0
           fi
           
           case "$BUMP" in
@@ -83,23 +108,28 @@ jobs:
               MINOR=$((MINOR + 1))
               PATCH=0
               ;;
-            patch|*)
+            patch)
               PATCH=$((PATCH + 1))
+              ;;
+            *)
+              echo "Unknown bump type: $BUMP"
+              exit 1
               ;;
           esac
           
           NEXT_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          echo "Computed version: $CURRENT_VERSION -> $NEXT_VERSION (bump: $BUMP)"
+          echo "published=true" >> $GITHUB_OUTPUT
+          echo "Version bump: $CURRENT_VERSION -> $NEXT_VERSION (type: $BUMP)"
 
       - name: Update .version file
-        if: steps.version.outputs.next_version != ''
+        if: steps.version.outputs.published == 'true'
         run: |
           echo "${{ steps.version.outputs.next_version }}" > .version
           cat .version
 
       - name: Commit and Tag
-        if: steps.version.outputs.next_version != ''
+        if: steps.version.outputs.published == 'true'
         run: |
           git add .version
           git commit -m "chore(release): v${{ steps.version.outputs.next_version }}"
@@ -108,7 +138,7 @@ jobs:
           git push origin "v${{ steps.version.outputs.next_version }}"
 
       - name: Create GitHub Release
-        if: steps.version.outputs.next_version != ''
+        if: steps.version.outputs.published == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.next_version }}
@@ -118,7 +148,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload version for downstream jobs
-        if: steps.version.outputs.next_version != ''
+        if: steps.version.outputs.published == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: version-info
