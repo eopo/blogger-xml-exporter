@@ -127,7 +127,7 @@
 		@apply bg-transparent ring-0;
 	}
 	.field__textarea {
-		@apply min-h-[120px] resize-y;
+		@apply min-h-30 resize-y;
 	}
 
 	/* Array fields (repeatable row groups) */
