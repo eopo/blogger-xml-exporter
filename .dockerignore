@@ -1,39 +1,38 @@
-# VCS
+# Version control
 .git
 .gitignore
-.github/
+.github
 
-# Documentation and configuration
-*.md
-.env
-docker-compose.yml
-Dockerfile
-.dockerignore
-
-# Build artifacts (rebuilt in container)
-bin/
-tmp/
-tools/
-
-# Configuration (mounted at runtime)
-config.yaml
-config.example.yaml
-config.test.yaml
-
-# Tests
-**/*_test.go
-frontend/vitest.config.ts
-frontend/__tests__
-
-# IDE
+# IDE and editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Node.js (rebuilt with npm ci)
-node_modules/
-frontend/dist/
-frontend/.eslintcache
+# Documentation (not needed in image)
+*.md
+README.md
+LICENSE
+
+# Development configuration (not needed in image)
+.air.toml
+.golangci-lint.yaml
+.pre-commit-config.yaml
+.prettierrc.json
+docker-compose.yml
+docker-compose.override.yml
+
+# Local environment (config.yaml is mounted at runtime)
+.env
+.env.local
+.env.example
+config.yaml
+config.test.yaml
+
+# Test files (not needed in production)
+**/*_test.go
+frontend/vitest.config.ts
 
 # OS
 .DS_Store
-.env.local

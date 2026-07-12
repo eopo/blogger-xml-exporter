@@ -3,11 +3,20 @@ bin/
 tmp/
 *.exe
 *.o
+*.a
+*.so
 
-# Node.js
+# Node.js dependencies and build output
 node_modules/
+frontend/node_modules/
 frontend/dist/
 frontend/.eslintcache
+
+# Generated assets (built by Docker or make)
+web/static/
+
+# Local tools (downloaded by scripts, not committed)
+tools/
 
 # IDE
 .vscode/
@@ -15,17 +24,17 @@ frontend/.eslintcache
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
 
 # Go
 go.sum.bak
 
-# Config
+# Local configuration and secrets
 config.yaml
-
-# Docker
-docker-compose.override.yml
-
-# OS
 .env
 .env.local
+
+# Docker override
+docker-compose.override.yml
