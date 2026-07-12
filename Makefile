@@ -18,7 +18,7 @@ export PATH := $(LOCALBIN):$(PATH)
 
 # Tool versions (pinned for reproducibility)
 AIR_VERSION := v1.65.3
-GOLANGCI_LINT_VERSION := v2.12.2
+GOLANGCI_LINT_VERSION := $(shell cat backend/.golangci-lint-version)
 
 # Application version (from .version file, SemVer)
 APP_VERSION := $(shell cat .version 2>/dev/null || echo "dev")
