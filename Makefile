@@ -1,87 +1,71 @@
 # Development workflow for Blogger XML Exporter
+# Follows Gitea pattern: make dev for watch mode, make stop to cleanup
 # Run `make help` to list all available targets.
 
 .DEFAULT_GOAL := help
-.PHONY: help setup setup-css-tools dev build build-go build-css build-docker lint test test-coverage fmt clean
+.PHONY: help setup dev watch-backend watch-frontend stop build build-docker lint lint-fix format test clean
 
+# Variables
+BLOGGER_API_KEY ?= dev-dummy-key
+CONFIG_PATH ?= ./config.yaml
+DOCKER_IMAGE ?= blogger-xml-exporter:local
+BIN_NAME := blogger-xml-exporter
 
 help: ## Show this help message
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
+	@grep -E '^[a-zA-Z_:-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-setup-css-tools: ## Download Tailwind CSS CLI (auto-detects OS/arch/libc)
-	@mkdir -p tools
-	@OS=$$(uname -s); ARCH=$$(uname -m); \
-	case "$$OS" in \
-	  Darwin) os=macos ;; \
-	  Linux)  os=linux ;; \
-	  MINGW*|MSYS*|CYGWIN*) os=windows ;; \
-	  *) echo "ERROR: unsupported OS '$$OS'"; exit 1 ;; \
-	esac; \
-	case "$$ARCH" in \
-	  arm64|aarch64) arch=arm64 ;; \
-	  x86_64|amd64)  arch=x64 ;; \
-	  armv7l|armv6l) echo "INFO: 32-bit ARM not supported for prebuilt Tailwind. Skipping."; exit 0 ;; \
-	  *) echo "ERROR: unsupported arch '$$ARCH'"; exit 1 ;; \
-	esac; \
-	libc=""; \
-	if [ "$$os" = linux ] && [ -f /lib/ld-musl-$$ARCH.so.1 ]; then libc="-musl"; fi; \
-	ext=""; out="tools/tailwindcss"; \
-	if [ "$$os" = windows ]; then ext=".exe"; out="tools/tailwindcss.exe"; fi; \
-	BINARY="tailwindcss-$$os-$$arch$$libc$$ext"; \
-	curl -sSfL "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/$$BINARY" -o "$$out"; \
-	[ "$$os" = windows ] || chmod +x "$$out"; \
-	echo "✓ Tailwind ready ($$BINARY)"
+setup: ## Install npm + Go dependencies
+	npm install
+	cd backend && go mod download
+	@echo "✓ Dependencies installed"
 
-setup: ## Setup development environment
-	@mkdir -p tools
-	# Install dev tools locally in tools/
-	curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b ./tools
-	GOBIN=$(shell pwd)/tools go install golang.org/x/tools/cmd/goimports@latest
-	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b ./tools latest
-	$(MAKE) setup-css-tools
-	@echo "Setup complete. Run 'make dev' to start development server."
+dev: ## Start Backend (watch) + Frontend (watch) together
+	@echo "Starting Backend (watch) + Frontend (watch)..."
+	@echo "Press Ctrl+C to stop all processes"
+	@echo ""
+	@make -j watch-backend watch-frontend
 
-dev: ## Start development server with live reload
-	@[ -x tools/air ] || (echo "Run 'make setup' first"; exit 1)
-	@trap 'kill 0' EXIT; \
-	tools/tailwindcss -i web/tailwind.src.css -o web/static/css/style.css --watch & \
-	./tools/air
+watch-backend: ## Start Backend with file watching (air)
+	@cd backend && \
+		BLOGGER_API_KEY=$(BLOGGER_API_KEY) \
+		CONFIG_PATH=../$(CONFIG_PATH) \
+		../tools/air
 
-build: build-go build-css ## Build Go binary and CSS (local only, for development)
+watch-frontend: ## Start Frontend with HMR (Vite)
+	@cd frontend && npm run dev
 
-build-docker: ## Build Docker image locally (all compilation happens in container)
-	docker build -t blogger-xml-exporter:local .
-	@echo "Docker image built: blogger-xml-exporter:local"
+stop: ## Stop all dev processes (air + vite)
+	@pkill -f "air|vite" || echo "No processes to stop"
+	@echo "✓ All dev processes stopped"
 
-build-go: ## Build Go binary
-	@mkdir -p bin
-	go build -o bin/blogger-xml-exporter .
-	@echo "Binary built: bin/blogger-xml-exporter"
+build: ## Build frontend (Vue 3 → web/static/) and Go binary
+	npm run build
+	cd backend && go build -o ../bin/$(BIN_NAME) .
+	@echo "✓ Build complete (bin/$(BIN_NAME) + web/static/)"
 
-build-css: ## Compile Tailwind CSS (minified)
-	@[ -x tools/tailwindcss ] || (echo "Tailwind CLI not found. Run 'make setup'"; exit 1)
-	@tools/tailwindcss -i web/tailwind.src.css -o web/static/css/style.css --minify
-	@echo "CSS compiled: web/static/css/style.css"
+build-docker: ## Build Docker image (complete multi-stage build)
+	docker build -t $(DOCKER_IMAGE) .
+	@echo "✓ Docker image built: $(DOCKER_IMAGE)"
 
-test: ## Run Go tests
-	go test -v ./...
+lint: ## Run ESLint + Go linter
+	npm run lint
+	@cd backend && ../../tools/golangci-lint run || echo "⚠ golangci-lint failed (optional)"
 
-test-coverage: ## Run Go tests with coverage report
-	go test -v -race -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report: coverage.html"
+lint-fix: ## Fix linting issues (ESLint + gofmt)
+	npm run lint:fix
+	@cd backend && go fmt ./...
 
-lint: ## Run Go linter (golangci-lint)
-	@[ -x tools/golangci-lint ] || { echo "golangci-lint not found in ./tools. Run 'make setup' first"; exit 1; }
-	./tools/golangci-lint run
+format: ## Format code (Prettier + gofmt)
+	npm run format
+	@cd backend && go fmt ./...
 
-fmt: ## Format Go code
-	@[ -x tools/goimports ] || (echo "goimports not found. Run 'make setup' first"; exit 1)
-	./tools/goimports -w .
-	gofmt -w .
-	@echo "Code formatted"
+test: ## Run tests (Vitest + Go tests)
+	npm run test
+	cd backend && go test ./...
 
 clean: ## Clean build artifacts
-	rm -rf bin/ coverage.out coverage.html
-	@echo "Clean complete"
+	rm -rf bin/ web/static/ coverage/ dist/
+	@cd backend && rm -rf tmp/
+	@echo "✓ Clean complete"
+

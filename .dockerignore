@@ -1,28 +1,39 @@
-# --- VCS / CI metadata ---
+# VCS
 .git
 .gitignore
 .github/
-.env
 
-# --- Documentation ---
+# Documentation and configuration
 *.md
-
-# --- Build outputs & host-downloaded tooling (rebuilt inside the image) ---
-bin/
-tmp/
-# host-downloaded build tools must not overwrite the container's own binaries
-tools/
-
-# --- Container/build definitions (not needed inside the build context) ---
+.env
+docker-compose.yml
 Dockerfile
 .dockerignore
-docker-compose.yml
 
-# --- Config: mounted at runtime, or local/test only ---
+# Build artifacts (rebuilt in container)
+bin/
+tmp/
+tools/
+
+# Configuration (mounted at runtime)
 config.yaml
 config.example.yaml
 config.test.yaml
-*.bak
 
-# --- Go tests are irrelevant to the production build ---
+# Tests
 **/*_test.go
+frontend/vitest.config.ts
+frontend/__tests__
+
+# IDE
+.vscode/
+.idea/
+
+# Node.js (rebuilt with npm ci)
+node_modules/
+frontend/dist/
+frontend/.eslintcache
+
+# OS
+.DS_Store
+.env.local

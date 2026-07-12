@@ -1,17 +1,15 @@
-# Environment variables
-.env
-.env.local
-
-# Build artifacts and tools
+# Build artifacts and binaries
 bin/
-tools/
 tmp/
 *.exe
 *.o
-*.a
-*.so
 
-# IDE & Editor
+# Node.js
+node_modules/
+frontend/dist/
+frontend/.eslintcache
+
+# IDE
 .vscode/
 .idea/
 *.swp
@@ -19,19 +17,15 @@ tmp/
 *~
 .DS_Store
 
-# Generated files
-web/static/css/style.css
-
-# Local config (override example config)
-config.yaml
-
 # Go
 go.sum.bak
-.air.toml.local
+
+# Config
+config.yaml
 
 # Docker
 docker-compose.override.yml
 
-# Coverage
-coverage.out
-coverage.html
+# OS
+.env
+.env.local
