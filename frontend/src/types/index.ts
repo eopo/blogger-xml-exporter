@@ -17,6 +17,7 @@ export interface SchemaResponse {
     logo?: string
     favicon?: string
   }
+  defaults?: FormValues // Field values resolved against an empty post (template fallbacks)
 }
 
 export interface FormGroup {
@@ -33,7 +34,8 @@ export interface FormItem {
   title?: string
   label?: string
   type: 'text' | 'textarea' | 'number' | 'email' | 'date' | 'select' | 'combobox' | 'group' | 'array'
-  width?: number // 1-12 (CSS grid fr units)
+  row?: number // Row grouping for layout (fields with the same row number appear inline)
+  width?: number // Proportional width (fr units); e.g. width 2 + width 4 → second is twice as wide
   required?: boolean
   includeTime?: boolean // for date type
   placeholder?: string

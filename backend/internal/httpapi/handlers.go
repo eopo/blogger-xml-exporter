@@ -61,6 +61,10 @@ func (s *Server) handleFormSchema(w http.ResponseWriter, _ *http.Request) {
 			assets["logo"] = "/assets/" + s.cfg.Assets.Logo
 		}
 	}
+	// Resolve field defaults (templates evaluated against an empty post) so the
+	// frontend can pre-fill fields like fallback URLs or the current timestamp
+	// without requiring a post to be selected first.
+	defaults := blogger.ResolveFields(map[string]interface{}{}, s.cfg.Form.Fields())
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"items": s.cfg.Form.Items,
 		"site": map[string]string{
@@ -72,7 +76,8 @@ func (s *Server) handleFormSchema(w http.ResponseWriter, _ *http.Request) {
 			"darkColor":    s.cfg.Theme.DarkColor,
 			"lightColor":   s.cfg.Theme.LightColor,
 		},
-		"assets": assets,
+		"assets":   assets,
+		"defaults": defaults,
 	})
 }
 

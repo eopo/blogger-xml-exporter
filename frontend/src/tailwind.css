@@ -266,48 +266,33 @@
 	@apply max-h-56 overflow-y-auto;
 }
 
-/* Flatpickr date picker styling with configurable primary color */
-	/* Uses CSS variables injected by app.js */
+/* Flatpickr: only theme-color overrides and calendar appearance.
+ * All layout/navigation styles are intentionally left to flatpickr's own
+ * defaults so the year picker, month centering, and time picker work out
+ * of the box. */
 .flatpickr-calendar {
-	@apply rounded-lg border border-slate-200 shadow-lg bg-white;
+	@apply rounded-lg border border-slate-200 bg-white;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
-.flatpickr-months {
-	padding: 1rem;
-}
-.flatpickr-month {
-	@apply text-slate-900 text-lg font-semibold;
-}
-.flatpickr-next,
-.flatpickr-prev {
-	@apply text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center;
-}
-.flatpickr-weekday {
-	@apply text-slate-600 font-semibold text-sm;
-}
-.flatpickr-days {
-	padding: 0 1rem 1rem 1rem;
-}
-.flatpickr-day {
-	@apply text-sm text-slate-700 rounded-md transition-colors;
-	width: calc(100% / 7);
-	max-width: 2.5rem;
-}
-.flatpickr-day:hover {
-	@apply bg-slate-100 text-slate-900;
+/* Counteract @tailwindcss/forms resets on the year <input type="number"> */
+.flatpickr-current-month input.cur-year {
+	background: transparent !important;
+	border: none !important;
+	padding: 0 !important;
+	box-shadow: none !important;
 }
 .flatpickr-day.selected,
 .flatpickr-day.selected:hover {
 	background: var(--color-primary, #2563eb) !important;
 	border-color: var(--color-primary, #2563eb) !important;
 	color: white !important;
-	font-weight: 600;
 }
 .flatpickr-day.today {
 	border-color: var(--color-primary, #2563eb) !important;
 	color: var(--color-primary, #2563eb) !important;
-	font-weight: 600;
 }
 .flatpickr-day.inRange {
-	@apply bg-primary/10 text-primary;
+	@apply bg-primary/10;
+	box-shadow: -5px 0 0 oklch(from var(--color-primary, #2563eb) l c h / 0.1),
+	            5px 0 0 oklch(from var(--color-primary, #2563eb) l c h / 0.1);
 }

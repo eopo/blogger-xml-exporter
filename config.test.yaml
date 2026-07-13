@@ -1,6 +1,3 @@
-# Test-Konfiguration für Unit-Tests (wird in git gepusht)
-# Umfangreiche Testabdeckung aller wichtigen Features und Feldtypen
-
 blogger:
   blogId: "test-blog-123"
   maxResults: 25

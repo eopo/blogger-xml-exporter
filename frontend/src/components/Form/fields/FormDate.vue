@@ -1,48 +1,25 @@
 <template>
-  <div
-    class="mb-4 w-full"
-    v-bind="$attrs"
-  >
-    <label
-      v-if="item.label || item.title"
-      :for="`field-${item.name}`"
-      class="block font-medium text-sm text-slate-700 mb-2"
-    >
+  <div class="mb-4 w-full" v-bind="$attrs">
+    <label v-if="item.label || item.title" :for="`field-${item.name}`"
+      class="block font-medium text-sm text-slate-700 mb-2">
       {{ item.label || item.title }}
-      <span
-        v-if="item.required"
-        class="text-red-500"
-      >*</span>
+      <span v-if="item.required" class="text-red-500">*</span>
     </label>
 
     <div class="relative">
-      <input
-        :id="`field-${item.name}`"
-        ref="inputRef"
-        type="text"
-        :value="modelValue"
-        :placeholder="item.placeholder || 'Datum auswählen...'"
-        :required="item.required"
-        :class="['w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 pl-10 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 cursor-pointer', { 'skeleton-pulse': isLoading }]"
-      >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
+      <input :id="`field-${item.name}`" ref="inputRef" type="text" :value="modelValue"
+        :placeholder="item.placeholder || 'Datum auswählen...'" :required="item.required"
+        :class="['w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 pl-10 text-sm transition-all duration-200 hover:border-slate-300 hover:bg-white focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10 cursor-pointer', { 'skeleton-pulse': isLoading }]">
+      <svg xmlns="http://www.w3.org/2000/svg"
         class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fill-rule="evenodd"
+        viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
           d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-          clip-rule="evenodd"
-        />
+          clip-rule="evenodd" />
       </svg>
     </div>
 
-    <p
-      v-if="item.help"
-      class="text-xs text-slate-500 mt-1.5"
-    >
+    <p v-if="item.help" class="text-xs text-slate-500 mt-1.5">
       {{ item.help }}
     </p>
   </div>
@@ -109,9 +86,12 @@ onMounted(() => {
 })
 
 watch(() => props.modelValue, (newVal) => {
-  if (fpInstance) {
-    if (newVal !== inputRef.value?.value) {
+  if (!fpInstance) return
+  if (newVal !== inputRef.value?.value) {
+    if (newVal) {
       fpInstance.setDate(newVal, false)
+    } else {
+      fpInstance.clear()
     }
   }
 })
@@ -122,20 +102,3 @@ onBeforeUnmount(() => {
   }
 })
 </script>
-
-<style>
-.flatpickr-calendar {
-  width: auto !important;
-  max-width: 100%;
-}
-
-.flatpickr-days {
-  width: auto !important;
-}
-
-.dayContainer {
-  width: auto !important;
-  min-width: auto !important;
-  max-width: auto !important;
-}
-</style>

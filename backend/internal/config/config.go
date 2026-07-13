@@ -36,6 +36,9 @@ type FormItem struct {
 	OptionsSource string         `yaml:"optionsSource,omitempty" json:"optionsSource,omitempty"`
 	AllowCustom   bool           `yaml:"allowCustom,omitempty" json:"allowCustom,omitempty"`
 
+	// Date field
+	IncludeTime bool `yaml:"includeTime,omitempty" json:"includeTime,omitempty"`
+
 	// Layout (within parent group)
 	Row   int `yaml:"row,omitempty" json:"row,omitempty"`
 	Width int `yaml:"width,omitempty" json:"width,omitempty"`

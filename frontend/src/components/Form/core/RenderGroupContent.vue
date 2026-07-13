@@ -1,97 +1,53 @@
 <template>
   <div>
     <!-- Presets dropdown -->
-    <div
-      v-if="group.presets && group.presets.length > 0"
-      class="mb-6"
-    >
-      <FormCombobox
-        :item="{
-          name: 'preset',
-          type: 'combobox',
-          label: 'Vorlage für diese Gruppe anwenden',
-          options: group.presets.map((p, i) => ({ value: i.toString(), label: p.label || p.title || 'Vorlage ' + (i + 1) })),
-          placeholder: '-- Bitte wählen --',
-          required: false,
-        }"
-        model-value=""
-        @update:model-value="applyPresetRawValue"
-      />
+    <div v-if="group.presets && group.presets.length > 0" class="mb-6">
+      <FormCombobox :item="{
+        name: 'preset',
+        type: 'combobox',
+        label: 'Vorlage für diese Gruppe anwenden',
+        options: group.presets.map((p, i) => ({ value: i.toString(), label: p.label || p.title || 'Vorlage ' + (i + 1) })),
+        placeholder: '-- Bitte wählen --',
+        required: false,
+      }" model-value="" @update:model-value="applyPresetRawValue" />
     </div>
 
     <!-- Render rows -->
-    <template
-      v-for="(row, rIdx) in rows"
-      :key="rIdx"
-    >
-      <div
-        class="grid gap-4"
-        :style="{ gridTemplateColumns: gridTemplate(row) }"
-      >
-        <template
-          v-for="field in row"
-          :key="field.name"
-        >
+    <template v-for="(row, rIdx) in rows" :key="rIdx">
+      <div class="grid gap-4" :style="{ gridTemplateColumns: gridTemplate(row) }">
+        <template v-for="field in row" :key="field.name">
           <div v-if="field.type === 'group'">
-            <FormGroup
-              :group="(field as any)"
-              :form-values="formValues"
-              :is-loading="isLoading"
-            />
+            <FormGroup :group="(field as any)" :form-values="formValues" :is-loading="isLoading" />
           </div>
 
           <div v-else-if="field.type === 'array'">
-            <FormArray
-              :item="field"
-              :model-value="(formValues[field.name] as unknown as any[]) || []"
-              :is-loading="isLoading"
-              @update:model-value="updateFormValue(field.name, $event)"
-            />
+            <FormArray :item="field" :model-value="(formValues[field.name] as unknown as any[]) || []"
+              :is-loading="isLoading" @update:model-value="updateFormValue(field.name, $event)" />
           </div>
 
           <div v-else-if="field.type === 'date'">
-            <FormDate
-              :item="field"
-              :model-value="(formValues[field.name] || '') as string"
-              :is-loading="isLoading"
-              @update:model-value="updateFormValue(field.name, $event)"
-            />
+            <FormDate :item="field" :model-value="(formValues[field.name] || '') as string" :is-loading="isLoading"
+              @update:model-value="updateFormValue(field.name, $event)" />
           </div>
 
           <div v-else-if="field.type === 'select'">
-            <FormCombobox
-              :item="field"
-              :model-value="(formValues[field.name] || '') as string"
-              :is-loading="isLoading"
-              @update:model-value="updateFormValue(field.name, $event)"
-            />
+            <FormCombobox :item="field" :model-value="(formValues[field.name] || '') as string" :is-loading="isLoading"
+              @update:model-value="updateFormValue(field.name, $event)" />
           </div>
 
           <div v-else-if="field.type === 'combobox'">
-            <FormCombobox
-              :item="field"
-              :model-value="(formValues[field.name] || '') as string"
-              :is-loading="isLoading"
-              @update:model-value="updateFormValue(field.name, $event)"
-            />
+            <FormCombobox :item="field" :model-value="(formValues[field.name] || '') as string" :is-loading="isLoading"
+              @update:model-value="updateFormValue(field.name, $event)" />
           </div>
 
           <div v-else-if="field.type === 'textarea'">
-            <FormField
-              :item="{ ...field, type: 'textarea' }"
-              :model-value="(formValues[field.name] || '') as string"
-              :is-loading="isLoading"
-              @update:model-value="updateFormValue(field.name, $event)"
-            />
+            <FormField :item="{ ...field, type: 'textarea' }" :model-value="(formValues[field.name] || '') as string"
+              :is-loading="isLoading" @update:model-value="updateFormValue(field.name, $event)" />
           </div>
 
           <div v-else>
-            <FormField
-              :item="field"
-              :model-value="(formValues[field.name] || '') as string | number"
-              :is-loading="isLoading"
-              @update:model-value="updateFormValue(field.name, $event)"
-            />
+            <FormField :item="field" :model-value="(formValues[field.name] || '') as string | number"
+              :is-loading="isLoading" @update:model-value="updateFormValue(field.name, $event)" />
           </div>
         </template>
       </div>
@@ -116,38 +72,32 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Build rows: distribute fields across columns based on width
-const rows = computed(() => {
-  const result: FormItem[][] = []
-  let currentRow: FormItem[] = []
-  let currentRowWidth = 0
-
-  // Guard against undefined fields/items properly, matching the schema definitions
-  // The schema has `items: FormItem[]` for groups, not `fields`.
+// Build rows: group fields by their `row` property (same row number → same grid row).
+// Fields without a `row` property each get their own row.
+const rows = computed((): FormItem[][] => {
   const items = props.group.items || []
+  if (items.length === 0) return []
 
+  const hasRowProperty = items.some(f => f.row !== undefined && f.row > 0)
+  if (!hasRowProperty) {
+    return items.map(f => [f])
+  }
+
+  const rowMap = new Map<number, FormItem[]>()
   for (const field of items) {
-    const width = field.width || 12
-    if (currentRowWidth + width > 12 && currentRow.length > 0) {
-      result.push(currentRow)
-      currentRow = [field]
-      currentRowWidth = width
-    } else {
-      currentRow.push(field)
-      currentRowWidth += width
-    }
+    const rowNum = field.row ?? 0
+    if (!rowMap.has(rowNum)) rowMap.set(rowNum, [])
+    rowMap.get(rowNum)!.push(field)
   }
-
-  if (currentRow.length > 0) {
-    result.push(currentRow)
-  }
-
-  return result
+  return Array.from(rowMap.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([, fields]) => fields)
 })
 
-// Calculate CSS Grid template for row
+// Build CSS Grid template: widths are pure fr ratios (width 2 + width 4 → second is twice as wide).
+// A field without an explicit width defaults to 1fr.
 function gridTemplate(row: FormItem[]): string {
-  return row.map((f) => `${Math.min(f.width || 12, 12)}fr`).join(' ')
+  return row.map((f) => `${f.width ?? 1}fr`).join(' ')
 }
 
 // Update form value (v-model binding)
