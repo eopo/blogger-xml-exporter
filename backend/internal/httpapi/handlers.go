@@ -142,7 +142,7 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 
 	xmlBytes, err := xmlgen.Render(s.cfg.XML, req.Post, req.Values)
 	if err != nil {
-		log.Printf("failed to render XML: %v", err)
+		log.Printf("failed to render XML: %s", sanitizeForLog(err.Error()))
 		writeError(w, http.StatusInternalServerError, "failed to generate XML")
 		return
 	}
@@ -162,4 +162,10 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func sanitizeForLog(value string) string {
+	value = strings.ReplaceAll(value, "\n", "")
+	value = strings.ReplaceAll(value, "\r", "")
+	return value
 }
