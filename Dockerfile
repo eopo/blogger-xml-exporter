@@ -9,9 +9,6 @@ WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend ./
-WORKDIR /src
-COPY web ./web
-WORKDIR /src/frontend
 RUN npm run build
 
 FROM golang:1.26.5-alpine AS go-builder
