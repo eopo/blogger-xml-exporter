@@ -96,11 +96,14 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache: true
+          cache-dependency-path: backend/go.sum
 
       - name: Check Go licenses
+        working-directory: backend
         run: |
           go install github.com/google/go-licenses@latest
-          cd backend && go-licenses check ./...
+          cp ../LICENSE LICENSE
+          go-licenses check ./...
         continue-on-error: true
 
       - uses: actions/setup-node@v6
@@ -110,7 +113,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Check Node licenses
+        working-directory: frontend
         run: |
           npm ci
-          npm ls -w frontend --depth=0 2>/dev/null | grep -E '(MIT|Apache-2.0|ISC|BSD)' || echo "License check complete"
+          npm ls --depth=0 2>/dev/null | grep -E '(MIT|Apache-2.0|ISC|BSD)' || echo "License check complete"
         continue-on-error: true
