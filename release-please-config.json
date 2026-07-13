@@ -8,7 +8,9 @@
       "skip-changelog": true,
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": false,
-      "include-v-in-tag": true
+      "include-v-in-tag": true,
+      "prerelease": true,
+      "prerelease-type": "rc"
     }
   }
 }
