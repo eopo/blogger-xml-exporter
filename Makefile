@@ -10,7 +10,7 @@ ROOT := $(shell git rev-parse --show-toplevel)
 LOCALBIN := $(ROOT)/.bin
 BLOGGER_API_KEY ?= dev-dummy-key
 CONFIG_PATH ?= ./config.yaml
-DOCKER_IMAGE ?= blogger-xml-exporter:local
+DOCKER_IMAGE ?= blogger-xml-exporter
 BIN_NAME := blogger-xml-exporter
 
 # Add .bin to PATH so installed tools are found first
