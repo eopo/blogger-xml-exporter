@@ -4,7 +4,7 @@ ARG VERSION=dev
 ARG COMMIT_SHA=unknown
 ARG BUILD_TIME=unknown
 
-FROM node:22-alpine AS frontend-builder
+FROM node:25-alpine AS frontend-builder
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
@@ -26,7 +26,7 @@ RUN go build \
     -ldflags "-X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildTime=${BUILD_TIME}" \
     -o /out/blogger-xml-exporter .
 
-FROM gcr.io/distroless/static-debian12:nonroot@sha256:b7bb25d9f7c31d2bdd1982feb4dafcaf137703c7075dbe2febb41c24212b946f
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:f5b485ea962d9bd1186b2f6b3a061191539b905b82ec395de78cbfae51f20e35
 WORKDIR /app
 COPY --from=go-builder /out/blogger-xml-exporter ./blogger-xml-exporter
 COPY --from=frontend-builder /src/web/static ./web/static
