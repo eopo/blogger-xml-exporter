@@ -10,6 +10,7 @@ FROM node:${NODE_VERSION}-alpine AS frontend-builder
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
+COPY .version ../.version
 COPY frontend ./
 RUN npm run build
 
