@@ -17,7 +17,6 @@ LICENSE
 
 # Development configuration (not needed in image)
 .air.toml
-.golangci-lint.yaml
 .pre-commit-config.yaml
 .prettierrc.json
 docker-compose.yml

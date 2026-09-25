@@ -11,6 +11,8 @@
       "include-v-in-tag": true,
       "prerelease": true,
       "prerelease-type": "rc",
+      "draft": true,
+      "force-tag-creation": true,
       "extra-files": [
         "frontend/package.json",
         "frontend/package-lock.json",
