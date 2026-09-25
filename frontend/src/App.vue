@@ -1,88 +1,133 @@
 <template>
   <div class="min-h-screen bg-linear-to-b from-slate-50 to-slate-100 py-8">
-    <div class="max-w-4xl mx-auto px-4">
+    <div class="max-w-4xl mx-auto px-4 flex min-h-[calc(100vh-4rem)] flex-col">
       <!-- Header -->
       <header class="mb-8">
         <h1 class="text-4xl font-bold text-slate-900 mb-2">
-          {{ api.schema.value?.site?.heading || 'Blogger XML Exporter' }}
+          {{ siteHeading }}
         </h1>
         <p class="text-slate-600">
           {{ api.schema.value?.site?.title ? '' : 'Export blog posts with custom XML schema' }}
         </p>
       </header>
 
-      <!-- Loading state -->
-      <div v-if="api.loading.value" class="bg-white rounded-lg border border-slate-200 p-6">
-        <p class="text-slate-700">
-          Lädt Schema...
-        </p>
-      </div>
-
-      <!-- Schema Error state -->
-      <div v-else-if="api.schemaError.value" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <p class="text-red-800">
-          Fehler beim Laden des Schemas: {{ api.schemaError.value }}
-        </p>
-      </div>
-
-      <!-- Form -->
-      <form v-else-if="api.hasSchema.value" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm" :style="{
-        '--skeleton-base': 'rgb(255, 255, 255)',
-        '--skeleton-highlight': hexToRgb(themeColors.primaryColor, 0.08)
-      } as Record<string, string>" @submit.prevent="onSubmit">
-        <div v-if="!api.postsError.value" class="mb-6 pb-6 border-b border-slate-200">
-          <h2 class="text-lg font-semibold text-slate-900 mb-4">
-            Blog Post
-          </h2>
-          <FormCombobox :item="{
-            name: 'post',
-            label: 'Post wählen',
-            type: 'combobox',
-            required: schema?.items?.find(i => i.name === 'post')?.required || false,
-            options: postsOptions,
-            placeholder: 'Post suchen...',
-            help: 'Wählen Sie einen Blog-Post aus'
-          }" :model-value="selectedPostId" :clear-on-focus="true" @update:model-value="onSelectPost" />
-        </div>
-        <!-- Posts Error Warning -->
-        <div v-else class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p class="text-sm text-yellow-800">
-            ⚠️ Blog-Posts konnten nicht geladen werden ({{ api.postsError.value }}). Sie können das Formular trotzdem
-            manuell ausfüllen.
+      <main class="flex-1">
+        <!-- Loading state -->
+        <div v-if="api.loading.value" class="bg-white rounded-lg border border-slate-200 p-6">
+          <p class="text-slate-700">
+            Lädt Schema...
           </p>
         </div>
 
-        <!-- Form items – rendered via RenderGroupContent so row/width grid
-             logic, all field types (textarea, array, etc.) and group nesting
-             work identically regardless of whether the config uses groups. -->
-        <RenderGroupContent v-if="schema && schema.items" :group="{ name: '__root__', items: schema.items }"
-          :form-values="formValues" :is-loading="isFillingForm" />
-
-        <!-- Submit button -->
-        <div class="mt-8 flex gap-3 border-t border-slate-200 pt-6">
-          <button type="submit" :disabled="isSubmitting" :style="{
-            backgroundColor: themeColors.primaryColor,
-            '--tw-shade-hover': themeColors.darkColor
-          }"
-            class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            :class="{ 'hover:opacity-90': !isSubmitting }">
-            {{ isSubmitting ? 'Wird generiert...' : 'XML generieren & herunterladen' }}
-          </button>
-          <button type="button"
-            class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 bg-slate-100 text-slate-700 hover:bg-slate-200"
-            @click="resetForm">
-            Zurücksetzen
-          </button>
+        <!-- Schema Error state -->
+        <div
+          v-else-if="api.schemaError.value"
+          class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+        >
+          <p class="text-red-800">
+            Fehler beim Laden des Schemas: {{ api.schemaError.value }}
+          </p>
         </div>
-      </form>
 
-      <!-- Fallback: No condition matched -->
-      <div v-else class="bg-orange-50 border border-orange-200 rounded-lg p-6">
-        <p class="text-orange-800">
-          ⚠️ Unerwarteter Zustand: loading={{ api.loading.value }}, hasSchema={{ api.hasSchema.value }}, schemaError={{
-            !!api.schemaError.value }}
-        </p>
-      </div>
+        <!-- Form -->
+        <form
+          v-else-if="api.hasSchema.value"
+          class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm"
+          :style="{
+            '--skeleton-base': 'rgb(255, 255, 255)',
+            '--skeleton-highlight': hexToRgb(themeColors.primaryColor, 0.08)
+          } as Record<string, string>"
+          @submit.prevent="onSubmit"
+        >
+          <div
+            v-if="!api.postsError.value"
+            class="mb-6 pb-6 border-b border-slate-200"
+          >
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">
+              Blog Post
+            </h2>
+            <FormCombobox
+              :item="{
+                name: 'post',
+                label: 'Post wählen',
+                type: 'combobox',
+                required: schema?.items?.find(i => i.name === 'post')?.required || false,
+                options: postsOptions,
+                placeholder: 'Post suchen...',
+                help: 'Wählen Sie einen Blog-Post aus'
+              }"
+              :model-value="selectedPostId"
+              :clear-on-focus="true"
+              @update:model-value="onSelectPost"
+            />
+          </div>
+          <!-- Posts Error Warning -->
+          <div v-else class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800">
+              ⚠️ Blog-Posts konnten nicht geladen werden ({{ api.postsError.value }}). Sie können das Formular trotzdem
+              manuell ausfüllen.
+            </p>
+          </div>
+
+          <!-- Form items – rendered via RenderGroupContent so row/width grid
+               logic, all field types (textarea, array, etc.) and group nesting
+               work identically regardless of whether the config uses groups. -->
+          <RenderGroupContent
+            v-if="schema && schema.items"
+            :group="{ name: '__root__', items: schema.items }"
+            :form-values="formValues"
+            :is-loading="isFillingForm"
+          />
+
+          <!-- Submit button -->
+          <div class="mt-8 flex gap-3 border-t border-slate-200 pt-6">
+            <button
+              type="submit"
+              :disabled="isSubmitting"
+              :style="{
+                backgroundColor: themeColors.primaryColor,
+                '--tw-shade-hover': themeColors.darkColor
+              }"
+              class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="{ 'hover:opacity-90': !isSubmitting }"
+            >
+              {{ isSubmitting ? 'Wird generiert...' : 'XML generieren & herunterladen' }}
+            </button>
+            <button
+              type="button"
+              class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 bg-slate-100 text-slate-700 hover:bg-slate-200"
+              @click="resetForm"
+            >
+              Zurücksetzen
+            </button>
+          </div>
+        </form>
+
+        <!-- Fallback: No condition matched -->
+        <div v-else class="bg-orange-50 border border-orange-200 rounded-lg p-6">
+          <p class="text-orange-800">
+            ⚠️ Unerwarteter Zustand: loading={{ api.loading.value }}, hasSchema={{ api.hasSchema.value }},
+            schemaError={{
+              !!api.schemaError.value }}
+          </p>
+        </div>
+      </main>
+
+      <footer class="mt-8 border-t border-slate-200 pt-4 text-sm text-slate-500">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            Version {{ appVersion }} · {{ pageTitle }}
+          </p>
+          <a
+            class="font-medium text-slate-700 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
+            :href="repositoryUrl"
+            target="_blank"
+            rel="noreferrer"
+          >
+            eopo/blogger-xml-exporter
+          </a>
+        </div>
+      </footer>
     </div>
   </div>
 </template>
@@ -95,6 +140,8 @@ import { useForm } from '@/composables/useForm'
 import RenderGroupContent from '@/components/Form/core/RenderGroupContent.vue'
 import FormCombobox from '@/components/Form/fields/FormCombobox.vue'
 
+const appVersion = __APP_VERSION__
+const repositoryUrl = 'https://github.com/eopo/blogger-xml-exporter'
 const api = useApi()
 const selectedPostId = ref('')
 const selectedPost = ref<Post | null>(null)
@@ -106,6 +153,9 @@ const schema = computed(() => api.schema.value)
 const form = useForm(schema.value)
 
 const formValues = form.formValues
+
+const siteHeading = computed(() => api.schema.value?.site?.heading || 'Blogger XML Exporter')
+const pageTitle = computed(() => api.schema.value?.site?.title || api.schema.value?.site?.heading || 'Blogger XML Exporter')
 
 // Theme colors from schema
 const themeColors = computed(() => {

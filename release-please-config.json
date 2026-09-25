@@ -10,7 +10,16 @@
       "bump-patch-for-minor-pre-major": false,
       "include-v-in-tag": true,
       "prerelease": true,
-      "prerelease-type": "rc"
+      "prerelease-type": "rc",
+      "extra-files": [
+        "frontend/package.json",
+        "frontend/package-lock.json",
+        {
+          "type": "json",
+          "path": "frontend/package-lock.json",
+          "jsonpath": "$['packages'][''].version"
+        }
+      ]
     }
   }
 }

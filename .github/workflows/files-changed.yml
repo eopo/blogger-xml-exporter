@@ -42,9 +42,11 @@ jobs:
             frontend:
               - "frontend/**"
               - ".nvmrc"
+              - ".version"
             docker:
               - "Dockerfile"
               - ".nvmrc"
+              - ".version"
               - "backend/**"
               - "frontend/**"
             workflows:

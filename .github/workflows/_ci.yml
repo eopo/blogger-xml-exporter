@@ -11,6 +11,30 @@ jobs:
   files-changed:
     uses: ./.github/workflows/files-changed.yml
 
+  version-consistency:
+    name: Version Consistency
+    needs: files-changed
+    if: needs.files-changed.outputs.frontend == 'true' || needs.files-changed.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify all version fields match .version
+        run: |
+          app_version=$(cat .version)
+          package_version=$(jq -r '.version' frontend/package.json)
+          lock_version=$(jq -r '.version' frontend/package-lock.json)
+          lock_root_version=$(jq -r '.packages[""].version' frontend/package-lock.json)
+
+          if [ "$package_version" != "$app_version" ] || [ "$lock_version" != "$app_version" ] || [ "$lock_root_version" != "$app_version" ]; then
+            echo "Version mismatch:"
+            echo "  .version:                  $app_version"
+            echo "  frontend/package.json:     $package_version"
+            echo "  package-lock top-level:    $lock_version"
+            echo "  package-lock root package: $lock_root_version"
+            exit 1
+          fi
+
   lint-backend:
     name: Lint Backend (Go)
     needs: files-changed
@@ -107,7 +131,7 @@ jobs:
   ci-complete:
     name: "✓ CI Complete"
     if: always()
-    needs: [lint-backend, test-backend, lint-frontend, test-build-frontend]
+    needs: [version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend]
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs passed or were skipped
