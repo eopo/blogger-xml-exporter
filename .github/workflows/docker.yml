@@ -13,7 +13,6 @@ permissions:
   contents: read
   packages: write
   id-token: write
-  security-events: write
 
 jobs:
   # Official Docker-maintained reusable workflow.
@@ -31,7 +30,6 @@ jobs:
       push: true
       sbom: true
       checkout-ref: ${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
-      upload-sarif: true
       meta-tags: |
         type=semver,pattern={{version}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
         type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}

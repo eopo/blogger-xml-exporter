@@ -26,11 +26,6 @@ on:
         type: string
         required: false
         default: blogger-xml-exporter
-      upload-sarif:
-        description: "Whether to upload Trivy SARIF to GitHub Security"
-        type: boolean
-        required: false
-        default: false
     secrets:
       registry-auths:
         description: "Registry credentials for publish builds"
@@ -39,7 +34,6 @@ on:
 permissions:
   contents: read
   id-token: write
-  packages: write
 
 jobs:
   scan-dockerfile:
@@ -47,7 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v7
         if: inputs.checkout-ref == ''
@@ -64,23 +57,6 @@ jobs:
           scan-ref: .
           exit-code: 1
           severity: CRITICAL,HIGH
-          format: sarif
-          output: trivy-dockerfile.sarif
-          limit-severities-for-sarif: true
-
-      - name: Upload SARIF artifact
-        uses: actions/upload-artifact@v7
-        if: always() && inputs.upload-sarif
-        with:
-          name: trivy-dockerfile-sarif
-          path: trivy-dockerfile.sarif
-
-      - name: Upload results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        if: always() && inputs.upload-sarif
-        with:
-          sarif_file: trivy-dockerfile.sarif
-          category: trivy-dockerfile
 
   versions:
     name: Resolve Build Versions
@@ -111,9 +87,36 @@ jobs:
           echo "go=$go_version" >> "$GITHUB_OUTPUT"
           echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-  build:
-    name: Build Docker Image
+  build-no-push:
+    name: Build Docker Image (no push)
     needs: [scan-dockerfile, versions]
+    if: inputs.push == false
+    uses: docker/github-builder/.github/workflows/build.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      output: image
+      push: false
+      platforms: linux/amd64,linux/arm64
+      sbom: ${{ inputs.sbom }}
+      cache: true
+      cache-scope: ${{ inputs.cache-scope }}
+      cache-mode: max
+      set-meta-labels: true
+      build-args: |
+        VERSION=${{ needs.versions.outputs.app }}
+        COMMIT_SHA=${{ github.sha }}
+        BUILD_TIME=${{ needs.versions.outputs.time }}
+        NODE_VERSION=${{ needs.versions.outputs.node }}
+        GO_VERSION=${{ needs.versions.outputs.go }}
+      meta-images: ghcr.io/${{ github.repository }}
+      meta-tags: ${{ inputs.meta-tags }}
+
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: [scan-dockerfile, versions]
+    if: inputs.push == true
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
       contents: read
@@ -121,7 +124,7 @@ jobs:
       packages: write
     with:
       output: image
-      push: ${{ inputs.push }}
+      push: true
       platforms: linux/amd64,linux/arm64
       sbom: ${{ inputs.sbom }}
       cache: true
