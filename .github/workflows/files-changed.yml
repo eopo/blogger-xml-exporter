@@ -35,9 +35,11 @@ jobs:
           filters: |
             backend:
               - "backend/**"
+              - "Dockerfile"
               - ".github/workflows/**"
             frontend:
               - "frontend/**"
+              - "Dockerfile"
               - ".github/workflows/**"
             docker:
               - "Dockerfile"
