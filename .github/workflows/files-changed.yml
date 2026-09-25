@@ -12,6 +12,9 @@ on:
       docker:
         description: "True if Docker-related files changed"
         value: ${{ jobs.detect.outputs.docker }}
+      workflows:
+        description: "True if CI workflow files changed"
+        value: ${{ jobs.detect.outputs.workflows }}
 
 permissions:
   contents: read
@@ -26,6 +29,7 @@ jobs:
       backend: ${{ steps.changes.outputs.backend }}
       frontend: ${{ steps.changes.outputs.frontend }}
       docker: ${{ steps.changes.outputs.docker }}
+      workflows: ${{ steps.changes.outputs.workflows }}
     steps:
       - uses: actions/checkout@v7
 
@@ -35,14 +39,14 @@ jobs:
           filters: |
             backend:
               - "backend/**"
-              - "Dockerfile"
-              - ".github/workflows/**"
             frontend:
               - "frontend/**"
-              - "Dockerfile"
-              - ".github/workflows/**"
+              - ".nvmrc"
             docker:
               - "Dockerfile"
+              - ".nvmrc"
               - "backend/**"
               - "frontend/**"
+            workflows:
               - ".github/workflows/**"
+

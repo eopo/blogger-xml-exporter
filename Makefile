@@ -107,6 +107,8 @@ build-docker: ## Build Docker image with version tags
 		--build-arg VERSION=$(APP_VERSION) \
 		--build-arg COMMIT_SHA=$(COMMIT_SHA) \
 		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--build-arg NODE_VERSION=$(shell cat .nvmrc) \
+		--build-arg GO_VERSION=$(shell v=$$(awk '/^toolchain /{sub(/^go/, "", $$2); print $$2}' backend/go.mod); [ -n "$$v" ] && echo "$$v" || awk '/^go /{print $$2}' backend/go.mod) \
 		.
 	@echo "✓ Docker image built: $(DOCKER_IMAGE):v$(APP_VERSION)"
 

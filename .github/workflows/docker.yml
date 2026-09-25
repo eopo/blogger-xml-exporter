@@ -15,6 +15,32 @@ permissions:
   id-token: write
 
 jobs:
+  # Resolve shared build inputs once so downstream jobs read from a single source of truth.
+  versions:
+    name: Resolve Build Versions
+    runs-on: ubuntu-latest
+    outputs:
+      node-version: ${{ steps.node.outputs.version }}
+      go-version: ${{ steps.go.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
+
+      - id: node
+        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+
+      - id: go
+        # Prefer the toolchain directive (kept current by Renovate); fall back to
+        # the go directive if no toolchain line exists. Mirrors actions/setup-go's
+        # own resolution order so every consumer resolves the same Go version.
+        run: |
+          version=$(awk '/^toolchain /{sub(/^go/, "", $2); print $2}' backend/go.mod)
+          if [ -z "$version" ]; then
+            version=$(awk '/^go /{print $2}' backend/go.mod)
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
   # Gate: Scan Dockerfile for misconfigurations BEFORE building or publishing anything.
   # App-level CVEs (Go, npm) are gated separately in CI via govulncheck and npm audit.
   # Ongoing container CVE monitoring after publish is handled by GitHub Dependabot (GHCR).
@@ -60,7 +86,7 @@ jobs:
   # https://github.com/docker/github-builder
   build-and-push:
     name: Build & Push Docker Image
-    needs: [scan-dockerfile]
+    needs: [scan-dockerfile, versions]
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
       contents: read
@@ -78,6 +104,8 @@ jobs:
         VERSION={{meta.version}}
         COMMIT_SHA=${{ github.sha }}
         BUILD_TIME=${{ github.event.release.published_at }}
+        NODE_VERSION=${{ needs.versions.outputs.node-version }}
+        GO_VERSION=${{ needs.versions.outputs.go-version }}
       meta-images: ghcr.io/${{ github.repository }}
       meta-tags: |
         type=semver,pattern={{version}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}

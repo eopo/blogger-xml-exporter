@@ -3,15 +3,17 @@
 ARG VERSION=dev
 ARG COMMIT_SHA=unknown
 ARG BUILD_TIME=unknown
+ARG NODE_VERSION=22
+ARG GO_VERSION=1.26.5
 
-FROM node:25-alpine AS frontend-builder
+FROM node:${NODE_VERSION}-alpine AS frontend-builder
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend ./
 RUN npm run build
 
-FROM golang:1.27.1-alpine AS go-builder
+FROM golang:${GO_VERSION}-alpine AS go-builder
 ARG VERSION
 ARG COMMIT_SHA
 ARG BUILD_TIME

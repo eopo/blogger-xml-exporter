@@ -1,0 +1,66 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "schedule": ["before 6am on monday"],
+  "packageRules": [
+    {
+      "description": "Go module dependencies (backend/go.mod require block)",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["require", "indirect"],
+      "groupName": "go-modules",
+      "labels": ["dependencies", "go"],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
+      "description": "Go toolchain version (backend/go.mod toolchain directive) — single source of truth for the Go version used everywhere",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["toolchain"],
+      "labels": ["dependencies", "go"],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
+      "description": "Frontend npm dependencies",
+      "matchManagers": ["npm"],
+      "groupName": "npm-dependencies",
+      "labels": ["dependencies", "frontend"],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
+      "description": "Node runtime version (.nvmrc) — single source of truth for the Node version used everywhere",
+      "matchManagers": ["nvm"],
+      "labels": ["dependencies", "frontend"],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
+      "description": "GitHub Actions version pins",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "labels": ["dependencies", "github-actions"],
+      "commitMessagePrefix": "ci(deps):"
+    },
+    {
+      "description": "Docker base images",
+      "matchManagers": ["dockerfile"],
+      "groupName": "docker-base-images",
+      "labels": ["dependencies", "docker"],
+      "commitMessagePrefix": "build(deps):"
+    },
+    {
+      "description": "Node/Go Dockerfile ARGs are driven exclusively by .nvmrc/go.mod (see nvm/gomod rules above), not by independent Docker tag lookups, to avoid two diverging sources of truth for the same version",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["node", "golang"],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the golangci-lint version pinned in backend/.golangci-lint-version (consumed by the Makefile and the golangci-lint-action)",
+      "managerFilePatterns": ["/^backend/\\.golangci-lint-version$/"],
+      "matchStrings": ["(?<currentValue>v[0-9.]+)"],
+      "depNameTemplate": "golangci/golangci-lint",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
+}
