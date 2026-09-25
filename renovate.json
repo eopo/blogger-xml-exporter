@@ -1,21 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "group:vitestMonorepo"],
   "labels": ["dependencies"],
   "schedule": ["before 6am on monday"],
   "packageRules": [
     {
-      "description": "Go module dependencies (backend/go.mod require block)",
+      "description": "Go module dependencies (backend/go.mod require block). The go directive itself is intentionally left alone by Renovate's default behavior.",
       "matchManagers": ["gomod"],
       "matchDepTypes": ["require", "indirect"],
       "groupName": "go-modules",
-      "labels": ["dependencies", "go"],
-      "commitMessagePrefix": "chore(deps):"
-    },
-    {
-      "description": "Go toolchain version (backend/go.mod toolchain directive) — single source of truth for the Go version used everywhere",
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["toolchain"],
       "labels": ["dependencies", "go"],
       "commitMessagePrefix": "chore(deps):"
     },
