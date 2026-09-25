@@ -20,6 +20,18 @@
       "commitMessagePrefix": "chore(deps):"
     },
     {
+      "description": "tailwindcss updates are excluded from the shared npm-dependencies group so they never block unrelated package updates from merging",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["tailwindcss", "@tailwindcss/**"],
+      "groupName": "tailwindcss"
+    },
+    {
+      "description": "Paused: Renovate's own lockfile regeneration for tailwindcss currently fails (npm CLI bug EALLOWREMOTE fetching @tailwindcss/oxide's optional platform binaries, tracked upstream in npm/cli). Re-enable once that's fixed.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["tailwindcss", "@tailwindcss/**"],
+      "enabled": false
+    },
+    {
       "description": "Node runtime version (.nvmrc) — single source of truth for the Node version used everywhere",
       "matchManagers": ["nvm"],
       "labels": ["dependencies", "frontend"],
