@@ -20,46 +20,30 @@
         </div>
 
         <!-- Schema Error state -->
-        <div
-          v-else-if="api.schemaError.value"
-          class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
-        >
+        <div v-else-if="api.schemaError.value" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p class="text-red-800">
             Fehler beim Laden des Schemas: {{ api.schemaError.value }}
           </p>
         </div>
 
         <!-- Form -->
-        <form
-          v-else-if="api.hasSchema.value"
-          class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm"
-          :style="{
-            '--skeleton-base': 'rgb(255, 255, 255)',
-            '--skeleton-highlight': hexToRgb(themeColors.primaryColor, 0.08)
-          } as Record<string, string>"
-          @submit.prevent="onSubmit"
-        >
-          <div
-            v-if="!api.postsError.value"
-            class="mb-6 pb-6 border-b border-slate-200"
-          >
+        <form v-else-if="api.hasSchema.value" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm" :style="{
+          '--skeleton-base': 'rgb(255, 255, 255)',
+          '--skeleton-highlight': hexToRgb(themeColors.primaryColor, 0.08)
+        } as Record<string, string>" @submit.prevent="onSubmit">
+          <div v-if="!api.postsError.value" class="mb-6 pb-6 border-b border-slate-200">
             <h2 class="text-lg font-semibold text-slate-900 mb-4">
               Blog Post
             </h2>
-            <FormCombobox
-              :item="{
-                name: 'post',
-                label: 'Post wählen',
-                type: 'combobox',
-                required: schema?.items?.find(i => i.name === 'post')?.required || false,
-                options: postsOptions,
-                placeholder: 'Post suchen...',
-                help: 'Wählen Sie einen Blog-Post aus'
-              }"
-              :model-value="selectedPostId"
-              :clear-on-focus="true"
-              @update:model-value="onSelectPost"
-            />
+            <FormCombobox :item="{
+              name: 'post',
+              label: 'Post wählen',
+              type: 'combobox',
+              required: schema?.items?.find(i => i.name === 'post')?.required || false,
+              options: postsOptions,
+              placeholder: 'Post suchen...',
+              help: 'Wählen Sie einen Blog-Post aus'
+            }" :model-value="selectedPostId" :clear-on-focus="true" @update:model-value="onSelectPost" />
           </div>
           <!-- Posts Error Warning -->
           <div v-else class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -72,32 +56,22 @@
           <!-- Form items – rendered via RenderGroupContent so row/width grid
                logic, all field types (textarea, array, etc.) and group nesting
                work identically regardless of whether the config uses groups. -->
-          <RenderGroupContent
-            v-if="schema && schema.items"
-            :group="{ name: '__root__', items: schema.items }"
-            :form-values="formValues"
-            :is-loading="isFillingForm"
-          />
+          <RenderGroupContent v-if="schema && schema.items" :group="{ name: '__root__', items: schema.items }"
+            :form-values="formValues" :is-loading="isFillingForm" />
 
           <!-- Submit button -->
           <div class="mt-8 flex gap-3 border-t border-slate-200 pt-6">
-            <button
-              type="submit"
-              :disabled="isSubmitting"
-              :style="{
-                backgroundColor: themeColors.primaryColor,
-                '--tw-shade-hover': themeColors.darkColor
-              }"
+            <button type="submit" :disabled="isSubmitting" :style="{
+              backgroundColor: themeColors.primaryColor,
+              '--tw-shade-hover': themeColors.darkColor
+            }"
               class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="{ 'hover:opacity-90': !isSubmitting }"
-            >
+              :class="{ 'hover:opacity-90': !isSubmitting }">
               {{ isSubmitting ? 'Wird generiert...' : 'XML generieren & herunterladen' }}
             </button>
-            <button
-              type="button"
+            <button type="button"
               class="px-6 py-3 rounded-lg font-medium transition-all duration-200 active:scale-95 bg-slate-100 text-slate-700 hover:bg-slate-200"
-              @click="resetForm"
-            >
+              @click="resetForm">
               Zurücksetzen
             </button>
           </div>
@@ -118,12 +92,8 @@
           <p>
             Version {{ appVersion }} · {{ pageTitle }}
           </p>
-          <a
-            class="font-medium text-slate-700 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
-            :href="repositoryUrl"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a class="font-medium text-slate-700 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
+            :href="repositoryUrl" target="_blank" rel="noreferrer">
             eopo/blogger-xml-exporter
           </a>
         </div>

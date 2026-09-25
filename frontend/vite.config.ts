@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
-import { readFileSync } from 'node:fs'
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const appVersion = readFileSync(path.resolve(__dirname, '../.version'), 'utf8').trim() || 'dev'
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const appVersion = readFileSync(path.resolve(__dirname, '../.version'), 'utf8').trim() || 'dev';
 
 export default defineConfig({
   plugins: [vue()],
@@ -31,7 +31,7 @@ export default defineConfig({
           proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log(`[${proxyRes.statusCode}] ${req.url}`);
           });
-        }
+        },
       },
     },
   },
@@ -44,11 +44,11 @@ export default defineConfig({
         chunkFileNames: 'js/[name].js',
         assetFileNames: (assetInfo) => {
           if (assetInfo.name.endsWith('.css')) {
-            return 'css/style.css'
+            return 'css/style.css';
           }
-          return 'assets/[name].[hash][extname]'
+          return 'assets/[name].[hash][extname]';
         },
       },
     },
   },
-})
+});
