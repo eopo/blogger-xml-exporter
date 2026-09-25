@@ -128,10 +128,25 @@ jobs:
           [ -f web/static/css/style.css ] || (echo "style.css missing" && exit 1)
           [ -f web/static/js/app.js ] || (echo "app.js missing" && exit 1)
 
+  build-docker:
+    name: Docker Build (no push)
+    needs: files-changed
+    if: needs.files-changed.outputs.docker == 'true' || needs.files-changed.outputs.workflows == 'true'
+    uses: ./.github/workflows/_docker-build.yml
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+      security-events: write
+    with:
+      push: false
+      meta-tags: |
+        type=sha,format=short
+
   ci-complete:
     name: "✓ CI Complete"
     if: always()
-    needs: [version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend]
+    needs: [version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend, build-docker]
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs passed or were skipped

@@ -13,100 +13,25 @@ permissions:
   contents: read
   packages: write
   id-token: write
+  security-events: write
 
 jobs:
-  # Resolve shared build inputs once so downstream jobs read from a single source of truth.
-  versions:
-    name: Resolve Build Versions
-    runs-on: ubuntu-latest
-    outputs:
-      node-version: ${{ steps.node.outputs.version }}
-      go-version: ${{ steps.go.outputs.version }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
-
-      - id: node
-        run: echo "version=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-
-      - id: go
-        # Prefer the toolchain directive (kept current by Renovate); fall back to
-        # the go directive if no toolchain line exists. Mirrors actions/setup-go's
-        # own resolution order so every consumer resolves the same Go version.
-        run: |
-          version=$(awk '/^toolchain /{sub(/^go/, "", $2); print $2}' backend/go.mod)
-          if [ -z "$version" ]; then
-            version=$(awk '/^go /{print $2}' backend/go.mod)
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-  # Gate: Scan Dockerfile for misconfigurations BEFORE building or publishing anything.
-  # App-level CVEs (Go, npm) are gated separately in CI via govulncheck and npm audit.
-  # Ongoing container CVE monitoring after publish is handled by GitHub Dependabot (GHCR).
-  scan-dockerfile:
-    name: Scan Dockerfile for Misconfigurations
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
-
-      - name: Scan Dockerfile for misconfigurations
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: config
-          scan-ref: .
-          exit-code: 1
-          severity: CRITICAL,HIGH
-          format: sarif
-          output: trivy-dockerfile.sarif
-          limit-severities-for-sarif: true
-
-      - name: Upload SARIF artifact
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: trivy-dockerfile-sarif
-          path: trivy-dockerfile.sarif
-
-      - name: Upload results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: trivy-dockerfile.sarif
-          category: trivy-dockerfile
-
   # Official Docker-maintained reusable workflow.
   # Handles: native runner selection (linux/arm64 → ubuntu-24.04-arm), per-platform
   # matrix, digest collection, manifest merge, signed GHA cache (OIDC), and SLSA provenance.
   # https://github.com/docker/github-builder
   build-and-push:
     name: Build & Push Docker Image
-    needs: [scan-dockerfile, versions]
-    uses: docker/github-builder/.github/workflows/build.yml@v1
+    uses: ./.github/workflows/_docker-build.yml
     permissions:
       contents: read
       id-token: write
       packages: write
     with:
-      output: image
       push: true
-      platforms: linux/amd64,linux/arm64
       sbom: true
-      cache: true
-      cache-mode: max
-      set-meta-labels: true
-      build-args: |
-        VERSION={{meta.version}}
-        COMMIT_SHA=${{ github.sha }}
-        BUILD_TIME=${{ github.event.release.published_at }}
-        NODE_VERSION=${{ needs.versions.outputs.node-version }}
-        GO_VERSION=${{ needs.versions.outputs.go-version }}
-      meta-images: ghcr.io/${{ github.repository }}
+      checkout-ref: ${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
+      upload-sarif: true
       meta-tags: |
         type=semver,pattern={{version}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
         type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
