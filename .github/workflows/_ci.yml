@@ -26,16 +26,14 @@ jobs:
           filters: |
             backend:
               - "backend/**"
+              - "config.test.yaml"
             frontend:
               - "frontend/**"
               - ".nvmrc"
               - ".version"
             docker:
               - "Dockerfile"
-              - ".nvmrc"
-              - ".version"
-              - "backend/**"
-              - "frontend/**"
+              - ".dockerignore"
             workflows:
               - ".github/workflows/**"
               - ".github/actions/**"
@@ -83,7 +81,7 @@ jobs:
   test-backend:
     name: Test Backend (Go)
     needs: files-changed
-    if: needs.files-changed.outputs.backend == 'true' || needs.files-changed.outputs.docker == 'true' || needs.files-changed.outputs.workflows == 'true'
+    if: needs.files-changed.outputs.backend == 'true' || needs.files-changed.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -121,7 +119,7 @@ jobs:
   test-build-frontend:
     name: Frontend (Test + Build)
     needs: files-changed
-    if: needs.files-changed.outputs.frontend == 'true' || needs.files-changed.outputs.docker == 'true' || needs.files-changed.outputs.workflows == 'true'
+    if: needs.files-changed.outputs.frontend == 'true' || needs.files-changed.outputs.workflows == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -145,7 +143,7 @@ jobs:
   build-docker:
     name: Docker Build (no push)
     needs: files-changed
-    if: needs.files-changed.outputs.docker == 'true' || needs.files-changed.outputs.workflows == 'true'
+    if: startsWith(github.head_ref, 'release-please--branches--') || needs.files-changed.outputs.docker == 'true'
     uses: ./.github/workflows/_docker-build.yml
     permissions:
       contents: read
