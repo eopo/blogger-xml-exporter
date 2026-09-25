@@ -9,7 +9,36 @@ permissions:
 
 jobs:
   files-changed:
-    uses: ./.github/workflows/files-changed.yml
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      docker: ${{ steps.changes.outputs.docker }}
+      workflows: ${{ steps.changes.outputs.workflows }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+            frontend:
+              - "frontend/**"
+              - ".nvmrc"
+              - ".version"
+            docker:
+              - "Dockerfile"
+              - ".nvmrc"
+              - ".version"
+              - "backend/**"
+              - "frontend/**"
+            workflows:
+              - ".github/workflows/**"
+              - ".github/actions/**"
 
   version-consistency:
     name: Version Consistency
@@ -43,11 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: backend/go.mod
-          cache: true
-          cache-dependency-path: backend/go.sum
+      - uses: ./.github/actions/setup-go
 
       - uses: golangci/golangci-lint-action@v9
         with:
@@ -63,14 +88,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: backend/go.mod
-          cache: true
-          cache-dependency-path: backend/go.sum
+      - uses: ./.github/actions/setup-go
 
       - name: Run tests
-        run: cd backend && go test -v -race -coverprofile=coverage.out ./...
+        working-directory: backend
+        run: go test -v -race -coverprofile=coverage.out ./...
 
       - uses: codecov/codecov-action@v7
         with:
@@ -86,19 +108,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - run: cd frontend && npm ci
+      - uses: ./.github/actions/setup-node
 
       - name: Lint
-        run: cd frontend && npm run lint
+        working-directory: frontend
+        run: npm run lint
 
       - name: Type check
-        run: cd frontend && npm run type-check
+        working-directory: frontend
+        run: npm run type-check
 
   test-build-frontend:
     name: Frontend (Test + Build)
@@ -108,19 +126,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - run: cd frontend && npm ci
+      - uses: ./.github/actions/setup-node
 
       - name: Tests
-        run: cd frontend && npm run test -- --run
+        working-directory: frontend
+        run: npm run test -- --run
 
       - name: Build
-        run: cd frontend && npm run build
+        working-directory: frontend
+        run: npm run build
 
       - name: Verify build artifacts
         run: |
@@ -137,14 +151,13 @@ jobs:
       contents: read
       id-token: write
     with:
-      push: false
       meta-tags: |
         type=sha,format=short
 
   ci-complete:
     name: "✓ CI Complete"
     if: always()
-    needs: [version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend, build-docker]
+    needs: [files-changed, version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend, build-docker]
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs passed or were skipped

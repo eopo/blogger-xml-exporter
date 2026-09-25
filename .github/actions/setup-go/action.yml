@@ -1,0 +1,12 @@
+name: Setup Go
+
+description: Configure the repository's pinned Go toolchain and module cache
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v7
+      with:
+        go-version-file: backend/go.mod
+        cache: true
+        cache-dependency-path: backend/go.sum

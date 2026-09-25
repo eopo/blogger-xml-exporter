@@ -10,10 +10,12 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
   pull-requests: read
 
 jobs:
   ci:
     uses: ./.github/workflows/_ci.yml
-    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: read

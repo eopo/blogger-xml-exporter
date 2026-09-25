@@ -1,22 +1,13 @@
-name: Docker Build (Reusable)
+name: Docker Build Gate (Reusable)
 
 on:
   workflow_call:
     inputs:
-      push:
-        description: "Whether to push the built image"
-        type: boolean
-        required: true
       sbom:
         description: "Whether to generate SBOM attestation"
         type: boolean
         required: false
         default: false
-      checkout-ref:
-        description: "Optional ref used to resolve version files"
-        type: string
-        required: false
-        default: ""
       meta-tags:
         description: "docker/metadata-action tag rules"
         type: string
@@ -26,14 +17,9 @@ on:
         type: string
         required: false
         default: blogger-xml-exporter
-    secrets:
-      registry-auths:
-        description: "Registry credentials for publish builds"
-        required: false
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   scan-dockerfile:
@@ -43,24 +29,14 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-        if: inputs.checkout-ref == ''
 
-      - uses: actions/checkout@v7
-        if: inputs.checkout-ref != ''
-        with:
-          ref: ${{ inputs.checkout-ref }}
-
-      - name: Scan Dockerfile for misconfigurations
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: config
-          scan-ref: .
-          exit-code: 1
-          severity: CRITICAL,HIGH
+      - uses: ./.github/actions/dockerfile-scan
 
   versions:
     name: Resolve Build Versions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       app: ${{ steps.resolve.outputs.app }}
       node: ${{ steps.resolve.outputs.node }}
@@ -68,29 +44,13 @@ jobs:
       time: ${{ steps.resolve.outputs.time }}
     steps:
       - uses: actions/checkout@v7
-        if: inputs.checkout-ref == ''
-
-      - uses: actions/checkout@v7
-        if: inputs.checkout-ref != ''
-        with:
-          ref: ${{ inputs.checkout-ref }}
 
       - id: resolve
-        run: |
-          go_version=$(awk '/^toolchain /{sub(/^go/, "", $2); print $2}' backend/go.mod)
-          if [ -z "$go_version" ]; then
-            go_version=$(awk '/^go /{print $2}' backend/go.mod)
-          fi
+        uses: ./.github/actions/resolve-build-versions
 
-          echo "app=$(cat .version)" >> "$GITHUB_OUTPUT"
-          echo "node=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
-          echo "go=$go_version" >> "$GITHUB_OUTPUT"
-          echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
-
-  build-no-push:
+  build:
     name: Build Docker Image (no push)
     needs: [scan-dockerfile, versions]
-    if: inputs.push == false
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
       contents: read
@@ -112,32 +72,3 @@ jobs:
         GO_VERSION=${{ needs.versions.outputs.go }}
       meta-images: ghcr.io/${{ github.repository }}
       meta-tags: ${{ inputs.meta-tags }}
-
-  build-and-push:
-    name: Build & Push Docker Image
-    needs: [scan-dockerfile, versions]
-    if: inputs.push == true
-    uses: docker/github-builder/.github/workflows/build.yml@v1
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-    with:
-      output: image
-      push: true
-      platforms: linux/amd64,linux/arm64
-      sbom: ${{ inputs.sbom }}
-      cache: true
-      cache-scope: ${{ inputs.cache-scope }}
-      cache-mode: max
-      set-meta-labels: true
-      build-args: |
-        VERSION=${{ needs.versions.outputs.app }}
-        COMMIT_SHA=${{ github.sha }}
-        BUILD_TIME=${{ needs.versions.outputs.time }}
-        NODE_VERSION=${{ needs.versions.outputs.node }}
-        GO_VERSION=${{ needs.versions.outputs.go }}
-      meta-images: ghcr.io/${{ github.repository }}
-      meta-tags: ${{ inputs.meta-tags }}
-    secrets:
-      registry-auths: ${{ secrets.registry-auths }}

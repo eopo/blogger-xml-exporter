@@ -9,27 +9,34 @@ on:
         description: "Version tag (e.g. 1.2.3)"
         required: true
 
-permissions:
-  contents: read
-  packages: write
-  id-token: write
-
 jobs:
-  # Official Docker-maintained reusable workflow.
-  # Handles: native runner selection (linux/arm64 → ubuntu-24.04-arm), per-platform
-  # matrix, digest collection, manifest merge, signed GHA cache (OIDC), and SLSA provenance.
-  # https://github.com/docker/github-builder
+  validate-dispatch-ref:
+    name: Validate Manual Dispatch Ref
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+    steps:
+      - name: Ensure selected tag matches requested version
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ] || [ "$REF_NAME" != "v$INPUT_TAG" ]; then
+            echo "Select the v$INPUT_TAG tag as the workflow ref; the Docker builder builds the selected ref."
+            exit 1
+          fi
+
   build-and-push:
     name: Build & Push Docker Image
-    uses: ./.github/workflows/_docker-build.yml
+    needs: validate-dispatch-ref
+    uses: ./.github/workflows/_docker-publish.yml
     permissions:
       contents: read
       id-token: write
       packages: write
     with:
-      push: true
-      sbom: true
-      checkout-ref: ${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
       meta-tags: |
         type=semver,pattern={{version}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}
         type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name || format('v{0}', inputs.tag) }}

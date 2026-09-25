@@ -1,0 +1,13 @@
+name: Scan Dockerfile
+
+description: Scan Docker configuration for high and critical severity findings
+
+runs:
+  using: composite
+  steps:
+    - uses: aquasecurity/trivy-action@v0.36.0
+      with:
+        scan-type: config
+        scan-ref: .
+        exit-code: 1
+        severity: CRITICAL,HIGH

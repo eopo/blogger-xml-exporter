@@ -1,0 +1,169 @@
+name: Docker Publish (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      meta-tags:
+        description: "docker/metadata-action tag rules"
+        type: string
+        required: true
+      cache-scope:
+        description: "Shared GitHub Actions BuildKit cache scope"
+        type: string
+        required: false
+        default: blogger-xml-exporter
+    secrets:
+      registry-auths:
+        description: "Registry credentials for publish builds"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan-dockerfile:
+    name: Scan Dockerfile for Misconfigurations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dockerfile-scan
+
+  versions:
+    name: Resolve Build Versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      app: ${{ steps.resolve.outputs.app }}
+      node: ${{ steps.resolve.outputs.node }}
+      go: ${{ steps.resolve.outputs.go }}
+      time: ${{ steps.resolve.outputs.time }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: resolve
+        uses: ./.github/actions/resolve-build-versions
+
+  # Pushes only an internal tag so the image can be scanned before any public
+  # release tag ever points at it (imagetools promotion below is tag-only, so
+  # the signed attestations from this trusted build remain valid post-promote).
+  publish-staging:
+    name: Build & Push Docker Image (staging tag)
+    needs: [scan-dockerfile, versions]
+    uses: docker/github-builder/.github/workflows/build.yml@v1
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      sbom: true
+      cache: true
+      cache-scope: ${{ inputs.cache-scope }}
+      cache-mode: max
+      set-meta-labels: true
+      build-args: |
+        VERSION=${{ needs.versions.outputs.app }}
+        COMMIT_SHA=${{ github.sha }}
+        BUILD_TIME=${{ needs.versions.outputs.time }}
+        NODE_VERSION=${{ needs.versions.outputs.node }}
+        GO_VERSION=${{ needs.versions.outputs.go }}
+      meta-images: ghcr.io/${{ github.repository }}
+      meta-tags: |
+        type=raw,value=pending-scan-${{ github.sha }}
+    secrets:
+      registry-auths: ${{ secrets.registry-auths }}
+
+  scan-image:
+    name: Scan Published Image for Vulnerabilities
+    needs: [publish-staging]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ github.repository }}@${{ needs.publish-staging.outputs.digest }}
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+
+  # Tag-only manifest aliasing onto the already-scanned digest: no rebuild, and
+  # the digest-scoped signatures/attestations from publish-staging stay valid.
+  promote:
+    name: Promote Verified Image to Release Tags
+    needs: [versions, scan-image, publish-staging]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: ${{ inputs.meta-tags }}
+
+      - name: Promote verified digest to release tags
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          DIGEST: ${{ needs.publish-staging.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          tag_args=()
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && tag_args+=(--tag "$tag")
+          done <<< "$TAGS"
+          docker buildx imagetools create "${tag_args[@]}" "${IMAGE}@${DIGEST}"
+
+  # Only reachable when the scan failed (promote didn't run), so the staging
+  # tag is still exclusive to this abandoned digest and safe to delete.
+  cleanup-staging:
+    name: Remove Staging Tag After Failed Scan
+    needs: [scan-image, publish-staging]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    continue-on-error: true
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: ${{ github.event.repository.name }}
+          TAG: pending-scan-${{ github.sha }}
+        run: |
+          api_base="orgs/$OWNER/packages/container/$PACKAGE"
+          if ! gh api "$api_base" >/dev/null 2>&1; then
+            api_base="users/$OWNER/packages/container/$PACKAGE"
+          fi
+
+          version_id=$(gh api --paginate "$api_base/versions" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"$TAG\") | .id" | head -n1)
+
+          if [ -n "$version_id" ]; then
+            gh api -X DELETE "$api_base/versions/$version_id"
+            echo "Deleted abandoned staging version $version_id ($TAG)"
+          else
+            echo "No staging package version found for $TAG"
+          fi
