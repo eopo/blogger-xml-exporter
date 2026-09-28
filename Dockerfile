@@ -4,7 +4,7 @@ ARG VERSION=dev
 ARG COMMIT_SHA=unknown
 ARG BUILD_TIME=unknown
 ARG NODE_VERSION=22
-ARG GO_VERSION=1.26.5
+ARG GO_VERSION=1.26.6
 
 FROM node:${NODE_VERSION}-alpine AS frontend-builder
 WORKDIR /src/frontend
