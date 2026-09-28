@@ -4,7 +4,7 @@
   "labels": ["dependencies"],
   "schedule": ["before 6am on monday"],
   "vulnerabilityAlerts": {
-    "labels": ["dependencies", "go", "security"],
+    "labels": ["dependencies", "go"],
     "vulnerabilityFixStrategy": "highest"
   },
   "packageRules": [
@@ -24,7 +24,7 @@
       "matchDepNames": ["go"],
       "matchDepTypes": ["golang"],
       "rangeStrategy": "bump",
-      "labels": ["dependencies", "go", "security"],
+      "labels": ["dependencies", "go"],
       "schedule": ["at any time"],
       "commitMessagePrefix": "chore(deps):"
     },
