@@ -3,13 +3,29 @@
   "extends": ["config:recommended", "group:vitestMonorepo"],
   "labels": ["dependencies"],
   "schedule": ["before 6am on monday"],
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "go", "security"],
+    "vulnerabilityFixStrategy": "highest"
+  },
   "packageRules": [
     {
-      "description": "Go module dependencies (backend/go.mod require block). The go directive itself is intentionally left alone by Renovate's default behavior.",
+      "description": "Keep direct and indirect Go module dependencies current, including security fixes.",
       "matchManagers": ["gomod"],
       "matchDepTypes": ["require", "indirect"],
+      "enabled": true,
       "groupName": "go-modules",
       "labels": ["dependencies", "go"],
+      "schedule": ["at any time"],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
+      "description": "Update the Go toolchain directive so standard-library security fixes are picked up promptly.",
+      "matchManagers": ["gomod"],
+      "matchDepNames": ["go"],
+      "matchDepTypes": ["golang"],
+      "rangeStrategy": "bump",
+      "labels": ["dependencies", "go", "security"],
+      "schedule": ["at any time"],
       "commitMessagePrefix": "chore(deps):"
     },
     {
