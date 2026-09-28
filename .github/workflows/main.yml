@@ -15,6 +15,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
       pull-requests: read
 
   release:
@@ -27,6 +28,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - id: release
         uses: googleapis/release-please-action@v5
@@ -35,29 +37,27 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  build-and-push:
-    name: Build & Push Docker Image
+  # The exact image built and vulnerability-scanned during the release-please
+  # PR check (see _ci.yml's build-docker-candidate) is promoted here without
+  # rebuilding, so the published tags are guaranteed to match what was verified.
+  promote-docker:
+    name: Promote Docker Image
     needs: [release]
     if: ${{ needs.release.outputs.release_created }}
-    uses: ./.github/workflows/_docker-publish.yml
+    uses: ./.github/workflows/_docker-promote.yml
     permissions:
       contents: read
-      id-token: write
       packages: write
     with:
+      candidate-tag: candidate-${{ needs.release.outputs.version }}
       meta-tags: |
         type=semver,pattern={{version}},value=${{ needs.release.outputs.tag_name }}
         type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.tag_name }}
         type=raw,value=latest
-    secrets:
-      registry-auths: |
-        - registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
   publish-release:
     name: Publish GitHub Release
-    needs: [release, build-and-push]
+    needs: [release, promote-docker]
     if: ${{ needs.release.outputs.release_created }}
     runs-on: ubuntu-latest
     permissions:

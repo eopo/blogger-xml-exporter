@@ -9,10 +9,10 @@ ARG GO_VERSION=1.26.5
 FROM node:${NODE_VERSION}-alpine AS frontend-builder
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY .version ../.version
 COPY frontend ./
-RUN npm run build
+RUN --mount=type=cache,target=/root/.npm npm run build
 
 FROM golang:${GO_VERSION}-alpine AS go-builder
 ARG VERSION
@@ -23,9 +23,10 @@ ENV GOTOOLCHAIN=auto
 ENV CGO_ENABLED=0
 WORKDIR /src
 COPY backend/go.mod backend/go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY backend ./
-RUN go build \
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
+    go build \
     -ldflags "-X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA} -X main.BuildTime=${BUILD_TIME}" \
     -o /out/blogger-xml-exporter .
 

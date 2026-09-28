@@ -18,4 +18,5 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
       pull-requests: read

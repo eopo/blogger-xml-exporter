@@ -17,6 +17,7 @@ jobs:
       frontend: ${{ steps.changes.outputs.frontend }}
       docker: ${{ steps.changes.outputs.docker }}
       workflows: ${{ steps.changes.outputs.workflows }}
+      version: ${{ steps.version.outputs.value }}
     steps:
       - uses: actions/checkout@v7
 
@@ -34,9 +35,14 @@ jobs:
             docker:
               - "Dockerfile"
               - ".dockerignore"
+              - "backend/go.mod"
+              - ".nvmrc"
             workflows:
               - ".github/workflows/**"
               - ".github/actions/**"
+
+      - id: version
+        run: echo "value=$(cat .version)" >> "$GITHUB_OUTPUT"
 
   version-consistency:
     name: Version Consistency
@@ -143,7 +149,7 @@ jobs:
   build-docker:
     name: Docker Build (no push)
     needs: files-changed
-    if: startsWith(github.head_ref, 'release-please--branches--') || needs.files-changed.outputs.docker == 'true'
+    if: needs.files-changed.outputs.docker == 'true' && !startsWith(github.head_ref, 'release-please--branches--')
     uses: ./.github/workflows/_docker-build.yml
     permissions:
       contents: read
@@ -152,10 +158,30 @@ jobs:
       meta-tags: |
         type=sha,format=short
 
+  # release-please PRs get the real, pushed and vulnerability-scanned build
+  # instead of the no-push validation above: main.yml promotes this exact
+  # candidate at release time without rebuilding it.
+  build-docker-candidate:
+    name: Docker Build Candidate (release-please)
+    needs: files-changed
+    if: startsWith(github.head_ref, 'release-please--branches--')
+    uses: ./.github/workflows/_docker-candidate.yml
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      candidate-tag: candidate-${{ needs.files-changed.outputs.version }}
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
   ci-complete:
     name: "✓ CI Complete"
     if: always()
-    needs: [files-changed, version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend, build-docker]
+    needs: [files-changed, version-consistency, lint-backend, test-backend, lint-frontend, test-build-frontend, build-docker, build-docker-candidate]
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs passed or were skipped

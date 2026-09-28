@@ -1,0 +1,98 @@
+name: Docker Promote (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      candidate-tag:
+        description: "Internal tag of the already-built and scanned candidate image"
+        type: string
+        required: true
+      meta-tags:
+        description: "docker/metadata-action tag rules for the public release tags"
+        type: string
+        required: true
+      cleanup:
+        description: "Whether to delete the candidate tag after a successful promote"
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    name: Promote Verified Candidate to Release Tags
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: sigstore/cosign-installer@v4
+
+      # Confirms the tag still points at a digest actually signed by our
+      # trusted candidate build, closing the window between scan and promote.
+      - name: Verify candidate provenance before promoting
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          CANDIDATE_TAG: ${{ inputs.candidate-tag }}
+        run: |
+          cosign verify "${IMAGE}:${CANDIDATE_TAG}" \
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp='^https://github.com/docker/github-builder/\.github/workflows/build\.yml.*$'
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: ${{ inputs.meta-tags }}
+
+      - name: Promote candidate to release tags
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          CANDIDATE_TAG: ${{ inputs.candidate-tag }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          tag_args=()
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && tag_args+=(--tag "$tag")
+          done <<< "$TAGS"
+          docker buildx imagetools create "${tag_args[@]}" "${IMAGE}:${CANDIDATE_TAG}"
+
+  cleanup-candidate:
+    name: Remove Candidate Tag After Promote
+    needs: [promote]
+    if: inputs.cleanup
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    continue-on-error: true
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: ${{ github.event.repository.name }}
+          TAG: ${{ inputs.candidate-tag }}
+        run: |
+          api_base="orgs/$OWNER/packages/container/$PACKAGE"
+          if ! gh api "$api_base" >/dev/null 2>&1; then
+            api_base="users/$OWNER/packages/container/$PACKAGE"
+          fi
+
+          version_id=$(gh api --paginate "$api_base/versions" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"$TAG\") | .id" | head -n1)
+
+          if [ -n "$version_id" ]; then
+            gh api -X DELETE "$api_base/versions/$version_id"
+            echo "Deleted promoted candidate version $version_id ($TAG)"
+          else
+            echo "No candidate package version found for $TAG"
+          fi

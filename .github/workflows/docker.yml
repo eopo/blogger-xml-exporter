@@ -25,21 +25,32 @@ jobs:
             exit 1
           fi
 
-  build-and-push:
-    name: Build & Push Docker Image
+  build-candidate:
+    name: Build Docker Image (candidate)
     needs: validate-dispatch-ref
-    uses: ./.github/workflows/_docker-publish.yml
+    uses: ./.github/workflows/_docker-candidate.yml
     permissions:
       contents: read
       id-token: write
       packages: write
     with:
-      meta-tags: |
-        type=semver,pattern={{version}},value=${{ format('v{0}', inputs.tag) }}
-        type=semver,pattern={{major}}.{{minor}},value=${{ format('v{0}', inputs.tag) }}
-        type=raw,value=latest
+      candidate-tag: candidate-${{ inputs.tag }}
     secrets:
       registry-auths: |
         - registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+  promote:
+    name: Promote Docker Image
+    needs: build-candidate
+    uses: ./.github/workflows/_docker-promote.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      candidate-tag: candidate-${{ inputs.tag }}
+      meta-tags: |
+        type=semver,pattern={{version}},value=${{ format('v{0}', inputs.tag) }}
+        type=semver,pattern={{major}}.{{minor}},value=${{ format('v{0}', inputs.tag) }}
+        type=raw,value=latest
