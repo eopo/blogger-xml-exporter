@@ -36,7 +36,7 @@ jobs:
 
       - uses: docker/setup-buildx-action@v4
 
-      - uses: sigstore/cosign-installer@v4
+      - uses: sigstore/cosign-installer@v4.1.2
 
       # Confirms the tag still points at a digest actually signed by our
       # trusted candidate build, closing the window between scan and promote.
