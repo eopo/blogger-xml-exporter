@@ -18,7 +18,7 @@
   "dependencies": {
     "flatpickr": "^4.6.13",
     "vue": "3.5.43",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
