@@ -4,6 +4,7 @@
     ".": {
       "release-type": "simple",
       "version-file": ".version",
+      "exclude-paths": [".github/workflows", ".github/actions"],
       "changelog-type": "github",
       "skip-changelog": true,
       "bump-minor-pre-major": false,

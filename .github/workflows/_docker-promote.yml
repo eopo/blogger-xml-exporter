@@ -38,16 +38,44 @@ jobs:
 
       - uses: sigstore/cosign-installer@v4.1.2
 
-      # Confirms the tag still points at a digest actually signed by our
-      # trusted candidate build, closing the window between scan and promote.
+      # The builder signs platform attestation manifests, not the image index.
+      # Pin the verified index so a later tag change cannot replace it.
       - name: Verify candidate provenance before promoting
+        id: verify
+        shell: bash
         env:
           IMAGE: ghcr.io/${{ github.repository }}
           CANDIDATE_TAG: ${{ inputs.candidate-tag }}
         run: |
-          cosign verify "${IMAGE}:${CANDIDATE_TAG}" \
-            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-            --certificate-identity-regexp='^https://github.com/docker/github-builder/\.github/workflows/build\.yml.*$'
+          manifest=$(docker buildx imagetools inspect "${IMAGE}:${CANDIDATE_TAG}" --format '{{json .Manifest}}')
+          digest=$(jq -er '.digest' <<< "$manifest")
+          platforms=$(jq -er '
+            if any(.manifests[];
+              .annotations["vnd.docker.reference.type"] == "attestation-manifest" and
+              (.platform.os != "unknown" or .platform.architecture != "unknown")
+            ) then error("Attestation descriptors must not be runnable platforms") else . end
+            |
+            [.manifests[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest]
+            | if length > 0 then .[] else error("No platform manifests found") end
+          ' <<< "$manifest")
+
+          while IFS= read -r platform; do
+            attestation=$(jq -er --arg platform "$platform" '
+              [.manifests[] | select(
+                .annotations["vnd.docker.reference.type"] == "attestation-manifest" and
+                .annotations["vnd.docker.reference.digest"] == $platform
+              )]
+              | if length == 1 then .[0].digest else error("Expected one attestation per platform") end
+            ' <<< "$manifest")
+            cosign verify "${IMAGE}@${attestation}" \
+              --experimental-oci11 \
+              --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+              --certificate-identity-regexp='^https://github.com/docker/github-builder/\.github/workflows/build\.yml.*$'
+            docker buildx imagetools inspect "${IMAGE}@${attestation}" --raw |
+              jq -e --arg platform "$platform" '.subject.digest == $platform'
+          done <<< "$platforms"
+
+          echo "image=${IMAGE}@${digest}" >> "$GITHUB_OUTPUT"
 
       - id: meta
         uses: docker/metadata-action@v6
@@ -57,15 +85,14 @@ jobs:
 
       - name: Promote candidate to release tags
         env:
-          IMAGE: ghcr.io/${{ github.repository }}
-          CANDIDATE_TAG: ${{ inputs.candidate-tag }}
+          IMAGE: ${{ steps.verify.outputs.image }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           tag_args=()
           while IFS= read -r tag; do
             [ -n "$tag" ] && tag_args+=(--tag "$tag")
           done <<< "$TAGS"
-          docker buildx imagetools create "${tag_args[@]}" "${IMAGE}:${CANDIDATE_TAG}"
+          docker buildx imagetools create "${tag_args[@]}" "$IMAGE"
 
   cleanup-candidate:
     name: Remove Candidate Tag After Promote
@@ -88,11 +115,11 @@ jobs:
           fi
 
           version_id=$(gh api --paginate "$api_base/versions" \
-            --jq ".[] | select(.metadata.container.tags[]? == \"$TAG\") | .id" | head -n1)
+            --jq ".[] | select(.metadata.container.tags == [\"$TAG\"]) | .id" | head -n1)
 
           if [ -n "$version_id" ]; then
             gh api -X DELETE "$api_base/versions/$version_id"
             echo "Deleted promoted candidate version $version_id ($TAG)"
           else
-            echo "No candidate package version found for $TAG"
+            echo "No candidate-only package version found for $TAG; retaining versions with release tags"
           fi
