@@ -71,7 +71,7 @@ This project uses **Conventional Commits** to enable automatic semantic versioni
 - **perf**: Performance improvement
 - **test**: Test additions/modifications
 - **chore**: Build/dependency changes
-- **ci**: CI/CD changes
+- **ci**: CI/CD changes (no version bump; use this type for CI fixes too, including the squash-merge PR title)
 - **revert**: Revert a previous commit
 
 ### Examples
@@ -105,14 +105,23 @@ Closes #123"
    - Creates Git tag and GitHub release
    - Triggers `build.yml` for Docker build + push
 
-### Manual Release (if needed)
-```bash
-# Trigger release workflow manually
-gh workflow run release.yml --ref main --field bump=patch
+### Retry a Failed Release
 
-# Or use semantic-release CLI locally
-npx semantic-release --no-ci
+After merging a CI fix, run the current **Main Pipeline** on `main` with the
+existing draft release tag:
+
+```bash
+gh workflow run main.yml --ref main --field retry-release=v0.4.2
 ```
+
+This skips Release Please and version creation, verifies and promotes the existing
+`candidate-0.4.2` image, then publishes the existing draft release. It requires
+the draft release and candidate image to still exist. Use this dispatch rather
+than “Re-run jobs”, which uses the failed run's original workflow revision.
+
+Commits changing only `.github/workflows/` or `.github/actions/` are excluded from
+Release Please's version calculation, even if labeled `fix`. Mixed application
+and CI changes still participate in versioning.
 
 ## 📦 Build & Deployment
 

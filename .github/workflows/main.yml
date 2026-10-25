@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      retry-release:
+        description: "Existing draft release tag to retry without a version bump (e.g. v0.4.2)"
+        type: string
+        required: false
 
 concurrency:
   group: main-${{ github.ref }}
@@ -26,11 +31,39 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      version: ${{ steps.release.outputs.version }}
+      release_created: ${{ steps.retry.outputs.release_created || steps.release.outputs.release_created }}
+      tag_name: ${{ steps.retry.outputs.tag_name || steps.release.outputs.tag_name }}
+      version: ${{ steps.retry.outputs.version || steps.release.outputs.version }}
     steps:
+      - name: Resolve existing draft release for retry
+        id: retry
+        if: inputs.retry-release != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.retry-release }}
+          REF: ${{ github.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "Retry releases from the default branch to use the current workflows." >&2
+            exit 1
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Expected a release tag such as v0.4.2." >&2
+            exit 1
+          fi
+          gh release view "$TAG" --json tagName,isDraft |
+            jq -e --arg tag "$TAG" '.tagName == $tag and .isDraft'
+          {
+            echo "release_created=true"
+            echo "tag_name=$TAG"
+            echo "version=${TAG#v}"
+          } >> "$GITHUB_OUTPUT"
+
       - id: release
+        if: inputs.retry-release == ''
         uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
