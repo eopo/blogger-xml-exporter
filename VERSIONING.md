@@ -108,15 +108,15 @@ Closes #123"
 ### Retry a Failed Release
 
 After merging a CI fix, run the current **Main Pipeline** on `main` with the
-existing draft release tag:
+existing draft or published release tag:
 
 ```bash
 gh workflow run main.yml --ref main --field retry-release=v0.4.2
 ```
 
 This skips Release Please and version creation, verifies and promotes the existing
-`candidate-0.4.2` image, then publishes the existing draft release. It requires
-the draft release and candidate image to still exist. Use this dispatch rather
+`candidate-0.4.2` image, then publishes the release if it is still a draft. It requires
+the release and candidate image to still exist. Use this dispatch rather
 than “Re-run jobs”, which uses the failed run's original workflow revision.
 
 Commits changing only `.github/workflows/` or `.github/actions/` are excluded from

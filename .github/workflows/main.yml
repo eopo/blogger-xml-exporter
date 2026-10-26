@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       retry-release:
-        description: "Existing draft release tag to retry without a version bump (e.g. v0.4.2)"
+        description: "Existing draft or published release tag to retry without a version bump (e.g. v0.4.2)"
         type: string
         required: false
 
@@ -35,7 +35,7 @@ jobs:
       tag_name: ${{ steps.retry.outputs.tag_name || steps.release.outputs.tag_name }}
       version: ${{ steps.retry.outputs.version || steps.release.outputs.version }}
     steps:
-      - name: Resolve existing draft release for retry
+      - name: Resolve existing release for retry
         id: retry
         if: inputs.retry-release != ''
         shell: bash
@@ -54,8 +54,8 @@ jobs:
             echo "Expected a release tag such as v0.4.2." >&2
             exit 1
           fi
-          gh release view "$TAG" --json tagName,isDraft |
-            jq -e --arg tag "$TAG" '.tagName == $tag and .isDraft'
+          gh release view "$TAG" --json tagName |
+            jq -e --arg tag "$TAG" '.tagName == $tag'
           {
             echo "release_created=true"
             echo "tag_name=$TAG"
